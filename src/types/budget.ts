@@ -67,3 +67,19 @@ export interface GiftEvent {
   budget: number;
   saved: number;
 }
+
+export interface Paystub {
+  id: string;
+  date: string;
+  fileName: string;
+  grossPay: number;
+  netPay: number;
+  deductions: number;
+}
+
+export interface SchoolPeriod {
+  id: string;
+  startMonth: string;
+  endMonth: string;
+  incomeMultiplier: number; // e.g. 0.6 for 60% income
+}

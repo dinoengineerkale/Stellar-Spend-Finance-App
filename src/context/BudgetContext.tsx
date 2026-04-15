@@ -1,7 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useState } from 'react';
-import { Transaction, Bucket, Vehicle, Course, Account, GiftEvent, VehicleExpense } from "@/types/budget";
+import { 
+  Transaction, 
+  Bucket, 
+  Vehicle, 
+  Course, 
+  Account, 
+  GiftEvent, 
+  VehicleExpense,
+  Paystub,
+  SchoolPeriod
+} from "@/types/budget";
 import { showSuccess } from "@/utils/toast";
 
 interface BudgetContextType {
@@ -23,6 +33,15 @@ interface BudgetContextType {
   giftEvents: GiftEvent[];
   updateGiftEvent: (id: string, updates: Partial<GiftEvent>) => void;
   syncContacts: () => void;
+  // Financial Profile
+  paystubs: Paystub[];
+  addPaystub: (stub: Omit<Paystub, 'id'>) => void;
+  schoolPeriods: SchoolPeriod[];
+  addSchoolPeriod: (period: Omit<SchoolPeriod, 'id'>) => void;
+  baseMonthlyIncome: number;
+  setBaseMonthlyIncome: (val: number) => void;
+  fixedMonthlyBills: number;
+  setFixedMonthlyBills: (val: number) => void;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
@@ -69,6 +88,16 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [giftEvents, setGiftEvents] = useState<GiftEvent[]>([
     { id: '1', person: 'Mom', relationship: 'Family', date: '2024-09-14', type: 'Birthday', budget: 150, saved: 120 },
   ]);
+
+  // Financial Profile State
+  const [paystubs, setPaystubs] = useState<Paystub[]>([
+    { id: '1', date: '2024-05-15', fileName: 'paystub_may_15.pdf', grossPay: 3200, netPay: 2350, deductions: 850 },
+  ]);
+  const [schoolPeriods, setSchoolPeriods] = useState<SchoolPeriod[]>([
+    { id: '1', startMonth: '2026-09', endMonth: '2027-04', incomeMultiplier: 0.6 },
+  ]);
+  const [baseMonthlyIncome, setBaseMonthlyIncome] = useState(5200);
+  const [fixedMonthlyBills, setFixedMonthlyBills] = useState(1200);
 
   const addTransaction = (tx: Omit<Transaction, 'id' | 'status'>) => {
     const newTx: Transaction = { ...tx, id: Math.random().toString(36).substr(2, 9), status: 'completed' };
@@ -158,6 +187,19 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     showSuccess("Synced 42 contacts from your device!");
   };
 
+  const addPaystub = (stub: Omit<Paystub, 'id'>) => {
+    const newStub = { ...stub, id: Math.random().toString(36).substr(2, 9) };
+    setPaystubs([newStub, ...paystubs]);
+    // Automatically update base income if it's the latest
+    setBaseMonthlyIncome(stub.netPay * 2); // Assuming bi-weekly
+    showSuccess("Paystub processed and income baseline updated!");
+  };
+
+  const addSchoolPeriod = (period: Omit<SchoolPeriod, 'id'>) => {
+    setSchoolPeriods([...schoolPeriods, { ...period, id: Math.random().toString(36).substr(2, 9) }]);
+    showSuccess("School period recorded for forecasting.");
+  };
+
   return (
     <BudgetContext.Provider value={{
       transactions, addTransaction,
@@ -165,7 +207,9 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       vehicles, addVehicle, updateVehicle, addVehicleExpense, updateVehicleExpense,
       courses, addCourse, updateCourse,
       accounts, addAccount,
-      giftEvents, updateGiftEvent, syncContacts
+      giftEvents, updateGiftEvent, syncContacts,
+      paystubs, addPaystub, schoolPeriods, addSchoolPeriod,
+      baseMonthlyIncome, setBaseMonthlyIncome, fixedMonthlyBills, setFixedMonthlyBills
     }}>
       {children}
     </BudgetContext.Provider>

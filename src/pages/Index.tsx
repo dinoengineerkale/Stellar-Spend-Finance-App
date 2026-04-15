@@ -29,11 +29,11 @@ import { cn } from "@/lib/utils";
 
 const Index = () => {
   const buckets = [
-    { id: '1', name: 'Clothes', budgeted: 200, spent: 145, icon: 'Shirt' },
-    { id: '2', name: 'Eating Out', budgeted: 400, spent: 380, icon: 'Utensils' },
-    { id: '3', name: 'Tithing', budgeted: 500, spent: 500, icon: 'Heart' },
-    { id: '4', name: 'Phone Bill', budgeted: 85, spent: 85, icon: 'Smartphone' },
-    { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp' },
+    { id: '1', name: 'Clothes', budgeted: 200, spent: 145, icon: 'Shirt', color: 'bg-blue-500' },
+    { id: '2', name: 'Eating Out', budgeted: 400, spent: 380, icon: 'Utensils', color: 'bg-orange-500' },
+    { id: '3', name: 'Tithing', budgeted: 500, spent: 500, icon: 'Heart', color: 'bg-red-500' },
+    { id: '4', name: 'Phone Bill', budgeted: 85, spent: 85, icon: 'Smartphone', color: 'bg-indigo-500' },
+    { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp', color: 'bg-green-500' },
   ];
 
   const recentActivity = [
@@ -151,8 +151,8 @@ const Index = () => {
                 <CardTitle className="text-sm font-bold">Upcoming Events</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
-                <EventItem icon={Gift} label="Mom's Birthday" date="Sept 14" budget={150} color="bg-pink-100 text-pink-600" />
-                <EventItem icon={Calendar} label="Best Friend's Wedding" date="Oct 02" budget={300} color="bg-blue-100 text-blue-600" />
+                <EventItem icon={Gift} label="Mom's Birthday" date="Sept 14" budget={150} budget_saved={120} color="bg-pink-100 text-pink-600" />
+                <EventItem icon={Calendar} label="Best Friend's Wedding" date="Oct 02" budget={300} budget_saved={0} color="bg-blue-100 text-blue-600" />
               </CardContent>
             </Card>
           </div>
