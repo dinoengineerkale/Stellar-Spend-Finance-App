@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">lunar-puffin-twirl</string>
+    <string name="title_activity_main">lunar-puffin-twirl</string>
+    <string name="package_name">com.example.lunarpuffintwirl</string>
+    <string name="custom_url_scheme">com.example.lunarpuffintwirl</string>
+</resources>
