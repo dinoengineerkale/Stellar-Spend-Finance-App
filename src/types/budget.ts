@@ -1,9 +1,9 @@
 export interface Transaction {
   id: string;
   date: string;
+  merchant: string;
   amount: number;
   category: string;
-  merchant: string;
   status: 'pending' | 'completed';
 }
 
@@ -13,28 +13,34 @@ export interface Bucket {
   budgeted: number;
   spent: number;
   icon: string;
+  color: string;
 }
 
-export interface Subscription {
+export interface VehicleExpense {
+  id: string;
+  type: string;
+  label: string;
+  value: number;
+  date: string;
+}
+
+export interface Vehicle {
   id: string;
   name: string;
-  amount: number;
-  frequency: 'monthly' | 'yearly';
-  nextBilling: string;
-}
-
-export interface CarStats {
-  purchasePrice: number;
-  totalInsurance: number;
-  totalGas: number;
-  totalParking: number;
-  totalTickets: number;
-  totalKm: number;
-  purchaseDate: string;
+  model: string;
+  image: string;
+  stats: {
+    purchasePrice: number;
+    totalKm: number;
+    purchaseDate: string;
+  };
+  expenses: VehicleExpense[];
 }
 
 export interface Course {
   id: string;
+  year: string;
+  semester: string;
   name: string;
   totalCost: number;
   classesPerWeek: number;
@@ -43,11 +49,21 @@ export interface Course {
   hasTutorials: boolean;
 }
 
+export interface Account {
+  id: string;
+  name: string;
+  type: string;
+  balance: number;
+  lastSync: string;
+  status: string;
+}
+
 export interface GiftEvent {
   id: string;
   person: string;
   relationship: string;
   date: string;
-  type: 'birthday' | 'anniversary' | 'wedding' | 'holiday';
+  type: string;
   budget: number;
+  saved: number;
 }

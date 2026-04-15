@@ -20,7 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, DollarSign, Tag, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, DollarSign } from "lucide-react";
+import { useBudget } from "@/context/BudgetContext";
 import { showSuccess } from "@/utils/toast";
 
 interface AddTransactionDialogProps {
@@ -29,9 +30,19 @@ interface AddTransactionDialogProps {
 
 const AddTransactionDialog = ({ trigger }: AddTransactionDialogProps) => {
   const [open, setOpen] = React.useState(false);
+  const { addTransaction } = useBudget();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    
+    addTransaction({
+      date: new Date().toISOString().split('T')[0],
+      merchant: formData.get('merchant') as string,
+      amount: parseFloat(formData.get('amount') as string),
+      category: formData.get('category') as string,
+    });
+
     showSuccess("Transaction recorded in Stellar Ledger!");
     setOpen(false);
   };
@@ -57,34 +68,34 @@ const AddTransactionDialog = ({ trigger }: AddTransactionDialogProps) => {
             <Label htmlFor="amount">Amount</Label>
             <div className="relative">
               <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-              <Input id="amount" placeholder="0.00" className="pl-10 text-lg font-bold" type="number" step="0.01" required />
+              <Input name="amount" id="amount" placeholder="0.00" className="pl-10 text-lg font-bold" type="number" step="0.01" required />
             </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="merchant">Merchant / Description</Label>
-            <Input id="merchant" placeholder="e.g. Starbucks, Amazon" required />
+            <Input name="merchant" id="merchant" placeholder="e.g. Starbucks, Amazon" required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select defaultValue="eating-out">
+              <Select name="category" defaultValue="Eating Out">
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="eating-out">Eating Out</SelectItem>
-                  <SelectItem value="vehicles">Vehicles</SelectItem>
-                  <SelectItem value="academy">Academy</SelectItem>
-                  <SelectItem value="subscriptions">Subscriptions</SelectItem>
-                  <SelectItem value="tithing">Tithing</SelectItem>
+                  <SelectItem value="Eating Out">Eating Out</SelectItem>
+                  <SelectItem value="Vehicles">Vehicles</SelectItem>
+                  <SelectItem value="Academy">Academy</SelectItem>
+                  <SelectItem value="Subscriptions">Subscriptions</SelectItem>
+                  <SelectItem value="Tithing">Tithing</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Account</Label>
-              <Select defaultValue="checking">
+              <Select name="account" defaultValue="checking">
                 <SelectTrigger>
                   <SelectValue placeholder="Select account" />
                 </SelectTrigger>

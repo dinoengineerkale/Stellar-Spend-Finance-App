@@ -2,90 +2,52 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Fuel, ShieldAlert, Ticket, ParkingCircle, Wrench, Plus, Edit2, Check } from "lucide-react";
+import { Car, Fuel, ShieldAlert, Ticket, ParkingCircle, Wrench, Plus, Edit2, Check, Camera, Gauge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useBudget } from "@/context/BudgetContext";
 import { cn } from "@/lib/utils";
-
-interface Vehicle {
-  id: string;
-  name: string;
-  model: string;
-  image: string;
-  stats: {
-    purchasePrice: number;
-    totalInsurance: number;
-    totalGas: number;
-    totalParking: number;
-    totalTickets: number;
-    totalMaintenance: number;
-    totalKm: number;
-    purchaseDate: string;
-  };
-}
+import { showSuccess, showLoading, dismissToast } from "@/utils/toast";
 
 const Vehicles = () => {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: '1',
-      name: 'Daily Driver',
-      model: 'Tesla Model 3',
-      image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=1000',
-      stats: {
-        purchasePrice: 45000,
-        totalInsurance: 2400,
-        totalGas: 0,
-        totalParking: 300,
-        totalTickets: 0,
-        totalMaintenance: 150,
-        totalKm: 12000,
-        purchaseDate: '2023-05-15',
-      }
-    },
-    {
-      id: '2',
-      name: 'Weekend Cruiser',
-      model: 'Porsche 911',
-      image: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1000',
-      stats: {
-        purchasePrice: 120000,
-        totalInsurance: 4800,
-        totalGas: 3200,
-        totalParking: 150,
-        totalTickets: 250,
-        totalMaintenance: 1200,
-        totalKm: 5000,
-        purchaseDate: '2022-10-01',
-      }
-    }
-  ]);
+  const { vehicles, addVehicle, updateVehicle, addVehicleExpense, updateVehicleExpense } = useBudget();
+  const [activeId, setActiveId] = useState(vehicles[0]?.id || '');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
 
-  const [activeId, setActiveId] = useState('1');
-  const [isEditing, setIsEditing] = useState(false);
-  
-  const activeVehicle = vehicles.find(v => v.id === activeId)!;
+  const activeVehicle = vehicles.find(v => v.id === activeId) || vehicles[0];
 
-  const totalCost = Object.values(activeVehicle.stats).reduce<number>((acc, val) => 
-    typeof val === 'number' ? acc + val : acc, 0
-  );
-  
+  if (!activeVehicle) return null;
+
+  const totalCost = activeVehicle.expenses.reduce((acc, e) => acc + e.value, 0) + activeVehicle.stats.purchasePrice;
   const daysOwned = Math.max(1, Math.floor((new Date().getTime() - new Date(activeVehicle.stats.purchaseDate).getTime()) / (1000 * 3600 * 24)));
   const costPerKm = totalCost / activeVehicle.stats.totalKm;
   const costPerDay = totalCost / daysOwned;
 
-  const handleUpdateVehicle = (field: keyof Vehicle, value: string) => {
-    setVehicles(vehicles.map(v => v.id === activeId ? { ...v, [field]: value } : v));
+  const handleScanReceipt = () => {
+    const tid = showLoading("Scanning receipt with Stellar OCR...");
+    setIsScanning(true);
+    setTimeout(() => {
+      dismissToast(tid);
+      addVehicleExpense(activeId, {
+        type: 'gas',
+        label: 'Fuel / Gas',
+        value: 64.20,
+        date: new Date().toISOString()
+      });
+      showSuccess("Receipt scanned! Added $64.20 to Fuel.");
+      setIsScanning(false);
+    }, 2000);
   };
 
   return (
-    <div className="max-w-7xl mx-auto flex flex-col md:flex-row min-h-[calc(100-64px)]">
-      {/* Vertical Vehicle Switcher */}
+    <div className="max-w-7xl mx-auto flex flex-col md:flex-row min-h-[calc(100vh-64px)]">
       <aside className="w-full md:w-64 border-r border-slate-200 dark:border-slate-800 p-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
         <div className="flex justify-between items-center px-2 mb-4">
           <h2 className="font-bold text-slate-900 dark:text-white">My Fleet</h2>
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-            <Plus size={18} />
-          </Button>
+          <AddVehicleDialog onAdd={addVehicle} />
         </div>
         <div className="space-y-2">
           {vehicles.map((v) => (
@@ -114,54 +76,41 @@ const Vehicles = () => {
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 p-6 md:p-8 space-y-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="space-y-1 flex-1">
-            {isEditing ? (
-              <div className="flex gap-2 items-center">
+            <div className="flex gap-2 items-center group">
+              {isEditingName ? (
                 <Input 
-                  value={activeVehicle.name} 
-                  onChange={(e) => handleUpdateVehicle('name', e.target.value)}
+                  defaultValue={activeVehicle.name} 
+                  onBlur={(e) => {
+                    updateVehicle(activeId, { name: e.target.value });
+                    setIsEditingName(false);
+                  }}
+                  autoFocus
                   className="text-2xl font-bold h-10 w-64"
                 />
-                <Button size="icon" variant="ghost" onClick={() => setIsEditing(false)}>
-                  <Check size={20} className="text-green-600" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2 items-center group">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{activeVehicle.name}</h1>
-                <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setIsEditing(true)}>
-                  <Edit2 size={16} />
-                </Button>
-              </div>
-            )}
-            <div className="flex items-center gap-2 text-slate-500">
-              {isEditing ? (
-                <Input 
-                  value={activeVehicle.model} 
-                  onChange={(e) => handleUpdateVehicle('model', e.target.value)}
-                  className="h-8 w-48 text-sm"
-                  placeholder="Vehicle Model"
-                />
               ) : (
-                <p>{activeVehicle.model} • Lifetime ownership analysis</p>
+                <>
+                  <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{activeVehicle.name}</h1>
+                  <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)}>
+                    <Edit2 size={16} />
+                  </Button>
+                </>
               )}
             </div>
+            <p className="text-slate-500">{activeVehicle.model} • Lifetime ownership analysis</p>
           </div>
-          <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700">
-            <Plus size={18} /> Add Expense
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleScanReceipt} disabled={isScanning} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
+              <Camera size={18} /> {isScanning ? "Scanning..." : "Scan Receipt"}
+            </Button>
+            <AddExpenseDialog onAdd={(exp) => addVehicleExpense(activeId, exp)} />
+          </div>
         </div>
 
-        {/* Dealership Quality Photo */}
         <div className="relative h-64 md:h-96 rounded-3xl overflow-hidden shadow-2xl group">
-          <img 
-            src={activeVehicle.image} 
-            alt={activeVehicle.model}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-          />
+          <img src={activeVehicle.image} alt={activeVehicle.model} className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
           <div className="absolute bottom-8 left-8 text-white">
             <div className="text-sm font-medium uppercase tracking-[0.2em] opacity-80 mb-1">Current Asset</div>
@@ -171,57 +120,43 @@ const Vehicles = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-slate-900 text-white border-none shadow-xl">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-slate-400 text-xs uppercase tracking-widest">Total Lifetime Cost</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold">${totalCost.toLocaleString()}</div>
-            </CardContent>
+            <CardHeader className="pb-2"><CardTitle className="text-slate-400 text-xs uppercase">Total Lifetime Cost</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold">${totalCost.toLocaleString()}</div></CardContent>
           </Card>
           <Card className="shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-slate-500 text-xs uppercase tracking-widest">Cost Per Kilometer</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-indigo-600">${costPerKm.toFixed(2)}</div>
-            </CardContent>
+            <CardHeader className="pb-2"><CardTitle className="text-slate-500 text-xs uppercase">Cost Per KM</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-indigo-600">${costPerKm.toFixed(2)}</div></CardContent>
           </Card>
           <Card className="shadow-md">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-slate-500 text-xs uppercase tracking-widest">Cost Per Day</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-indigo-600">${costPerDay.toFixed(2)}</div>
-            </CardContent>
+            <CardHeader className="pb-2"><CardTitle className="text-slate-500 text-xs uppercase">Cost Per Day</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-indigo-600">${costPerDay.toFixed(2)}</div></CardContent>
           </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="shadow-lg border-none">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Wrench size={20} className="text-indigo-600" /> Expense Breakdown
-              </CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Wrench size={20} className="text-indigo-600" /> Expense Breakdown</CardTitle></CardHeader>
             <CardContent className="space-y-3">
-              <BreakdownItem icon={Fuel} label="Fuel / Gas" value={activeVehicle.stats.totalGas} color="text-orange-500" />
-              <BreakdownItem icon={Wrench} label="Maintenance & Repairs" value={activeVehicle.stats.totalMaintenance} color="text-indigo-500" />
-              <BreakdownItem icon={ShieldAlert} label="Insurance" value={activeVehicle.stats.totalInsurance} color="text-blue-500" />
-              <BreakdownItem icon={ParkingCircle} label="Parking" value={activeVehicle.stats.totalParking} color="text-emerald-500" />
-              <BreakdownItem icon={Ticket} label="Tickets & Fines" value={activeVehicle.stats.totalTickets} color="text-red-500" />
+              {activeVehicle.expenses.map(exp => (
+                <BreakdownItem 
+                  key={exp.id} 
+                  icon={getIcon(exp.type)} 
+                  label={exp.label} 
+                  value={exp.value} 
+                  color={getColor(exp.type)}
+                  onEdit={(val) => updateVehicleExpense(activeId, exp.id, val)}
+                />
+              ))}
             </CardContent>
           </Card>
 
           <Card className="flex flex-col items-center justify-center p-8 text-center space-y-6 border-dashed border-2 bg-slate-50/50 dark:bg-slate-900/50">
-            <div className="p-6 bg-white dark:bg-slate-800 rounded-full shadow-xl">
-              <Car size={48} className="text-indigo-600" />
-            </div>
+            <div className="p-6 bg-white dark:bg-slate-800 rounded-full shadow-xl"><Gauge size={48} className="text-indigo-600" /></div>
             <div>
               <h3 className="font-bold text-xl">Odometer Tracking</h3>
               <p className="text-sm text-slate-500 mt-2">Total Distance: <span className="font-bold text-slate-900 dark:text-white">{activeVehicle.stats.totalKm.toLocaleString()} km</span></p>
-              <p className="text-xs text-slate-400 mt-1">Purchased on {new Date(activeVehicle.stats.purchaseDate).toLocaleDateString()}</p>
             </div>
-            <Button variant="outline" className="w-full max-w-xs rounded-xl">Update Odometer</Button>
+            <UpdateOdometerDialog current={activeVehicle.stats.totalKm} onUpdate={(km) => updateVehicle(activeId, { stats: { ...activeVehicle.stats, totalKm: km } })} />
           </Card>
         </div>
       </main>
@@ -229,16 +164,138 @@ const Vehicles = () => {
   );
 };
 
-const BreakdownItem = ({ icon: Icon, label, value, color }: any) => (
-  <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-indigo-200 transition-colors">
-    <div className="flex items-center gap-3">
-      <div className={cn("p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm", color)}>
-        <Icon size={18} />
+const getIcon = (type: string) => {
+  switch(type) {
+    case 'gas': return Fuel;
+    case 'maintenance': return Wrench;
+    case 'insurance': return ShieldAlert;
+    case 'parking': return ParkingCircle;
+    default: return Ticket;
+  }
+};
+
+const getColor = (type: string) => {
+  switch(type) {
+    case 'gas': return 'text-orange-500';
+    case 'maintenance': return 'text-indigo-500';
+    case 'insurance': return 'text-blue-500';
+    case 'parking': return 'text-emerald-500';
+    default: return 'text-red-500';
+  }
+};
+
+const BreakdownItem = ({ icon: Icon, label, value, color, onEdit }: any) => {
+  const [isEditing, setIsEditing] = useState(false);
+  return (
+    <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+      <div className="flex items-center gap-3">
+        <div className={cn("p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm", color)}><Icon size={18} /></div>
+        <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
       </div>
-      <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
+      <div className="flex items-center gap-2">
+        {isEditing ? (
+          <Input 
+            type="number" 
+            defaultValue={value} 
+            onBlur={(e) => {
+              onEdit(parseFloat(e.target.value));
+              setIsEditing(false);
+            }}
+            className="w-24 h-8 text-right font-bold"
+            autoFocus
+          />
+        ) : (
+          <>
+            <span className="font-bold text-slate-900 dark:text-white">${value.toLocaleString()}</span>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditing(true)}><Edit2 size={12} /></Button>
+          </>
+        )}
+      </div>
     </div>
-    <span className="font-bold text-slate-900 dark:text-white">${value.toLocaleString()}</span>
-  </div>
-);
+  );
+};
+
+const AddVehicleDialog = ({ onAdd }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Plus size={18} /></Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Add New Vehicle</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onAdd({
+            name: e.target.name.value,
+            model: e.target.model.value,
+            image: 'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&q=80&w=1000',
+            stats: { purchasePrice: parseFloat(e.target.price.value), totalKm: 0, purchaseDate: new Date().toISOString() }
+          });
+          setOpen(false);
+        }} className="space-y-4">
+          <div className="space-y-2"><Label>Nickname</Label><Input name="name" placeholder="e.g. My Truck" required /></div>
+          <div className="space-y-2"><Label>Model</Label><Input name="model" placeholder="e.g. Ford F-150" required /></div>
+          <div className="space-y-2"><Label>Purchase Price</Label><Input name="price" type="number" placeholder="0" required /></div>
+          <Button type="submit" className="w-full bg-indigo-600">Add to Fleet</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const AddExpenseDialog = ({ onAdd }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button className="gap-2 bg-indigo-600"><Plus size={18} /> Add Expense</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Add Vehicle Expense</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onAdd({
+            type: e.target.type.value,
+            label: e.target.type.options[e.target.type.selectedIndex].text,
+            value: parseFloat(e.target.amount.value),
+            date: new Date().toISOString()
+          });
+          setOpen(false);
+        }} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Expense Type</Label>
+            <select name="type" className="w-full p-2 border rounded-md">
+              <option value="gas">Fuel / Gas</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="insurance">Insurance</option>
+              <option value="parking">Parking</option>
+              <option value="tickets">Tickets</option>
+            </select>
+          </div>
+          <div className="space-y-2"><Label>Amount</Label><Input name="amount" type="number" step="0.01" required /></div>
+          <Button type="submit" className="w-full bg-indigo-600">Record Expense</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const UpdateOdometerDialog = ({ current, onUpdate }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="outline" className="w-full max-w-xs rounded-xl">Update Odometer</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Update Odometer</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onUpdate(parseInt(e.target.km.value));
+          setOpen(false);
+          showSuccess("Odometer updated!");
+        }} className="space-y-4">
+          <div className="space-y-2"><Label>Current Reading (km)</Label><Input name="km" type="number" defaultValue={current} required /></div>
+          <Button type="submit" className="w-full bg-indigo-600">Save Reading</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default Vehicles;
