@@ -17,7 +17,10 @@ import {
   RefreshCw,
   BarChart3,
   ListTodo,
-  Wallet
+  Wallet,
+  Flame,
+  Plus,
+  ArrowRightLeft
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
@@ -34,7 +37,7 @@ const Index = () => {
   const realHourlyRate = 32.50;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 md:pb-12">
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -65,20 +68,31 @@ const Index = () => {
           <div className="md:col-span-2">
             <InMyPocket income={5200} bills={1200} budgeted={2185} />
           </div>
-          <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-slate-500 text-xs uppercase flex items-center gap-2">
-                <Clock size={14} /> Real Take-Home
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-4xl font-bold text-indigo-600">${realHourlyRate.toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
-              <p className="text-xs text-slate-500 mt-2">After taxes, bills, and mandatory savings.</p>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-slate-500 text-xs uppercase flex items-center gap-2">
+                  <Clock size={14} /> Real Take-Home
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-4xl font-bold text-indigo-600">${realHourlyRate.toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
+                <p className="text-xs text-slate-500 mt-2">After taxes, bills, and mandatory savings.</p>
+              </CardContent>
+            </Card>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 text-xs h-12">
+                <Plus size={16} /> Expense
+              </Button>
+              <Button variant="outline" className="gap-2 text-xs h-12">
+                <ArrowRightLeft size={16} /> Transfer
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
           <Link to="/transactions">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <ListTodo className="text-indigo-600" />
@@ -95,6 +109,12 @@ const Index = () => {
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <Wallet className="text-indigo-600" />
               <span className="text-[10px] font-bold uppercase">Accounts</span>
+            </Button>
+          </Link>
+          <Link to="/debt-destroyer">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-orange-50 dark:hover:bg-orange-900/20">
+              <Flame className="text-orange-600" />
+              <span className="text-[10px] font-bold uppercase">Debt</span>
             </Button>
           </Link>
           <Link to="/car-vault">

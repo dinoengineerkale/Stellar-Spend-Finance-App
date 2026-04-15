@@ -12,7 +12,9 @@ import Forecasting from "./pages/Forecasting";
 import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
 import Reports from "./pages/Reports";
+import DebtDestroyer from "./pages/DebtDestroyer";
 import NotFound from "./pages/NotFound";
+import MobileNav from "./components/MobileNav";
 
 const queryClient = new QueryClient();
 
@@ -22,18 +24,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/car-vault" element={<CarVault />} />
-          <Route path="/academy" element={<Academy />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/gift-galaxy" element={<GiftGalaxy />} />
-          <Route path="/forecasting" element={<Forecasting />} />
-          <Route path="/transactions" element={<Transactions />} />
-          <Route path="/accounts" element={<Accounts />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/car-vault" element={<CarVault />} />
+            <Route path="/academy" element={<Academy />} />
+            <Route path="/subscriptions" element={<Subscriptions />} />
+            <Route path="/gift-galaxy" element={<GiftGalaxy />} />
+            <Route path="/forecasting" element={<Forecasting />} />
+            <Route path="/transactions" element={<Transactions />} />
+            <Route path="/accounts" element={<Accounts />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/debt-destroyer" element={<DebtDestroyer />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <MobileNav />
+        </div>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
