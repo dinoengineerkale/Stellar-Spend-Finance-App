@@ -20,7 +20,10 @@ import {
   Wallet,
   Flame,
   Plus,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Settings as SettingsIcon,
+  ChevronRight,
+  Tag
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
@@ -32,6 +35,12 @@ const Index = () => {
     { id: '3', name: 'Tithing', budgeted: 500, spent: 500, icon: 'Heart' },
     { id: '4', name: 'Phone Bill', budgeted: 85, spent: 85, icon: 'Smartphone' },
     { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp' },
+  ];
+
+  const recentActivity = [
+    { id: '1', merchant: 'Starbucks', amount: 6.50, category: 'Eating Out', date: 'Today' },
+    { id: '2', merchant: 'Shell Gas', amount: 85.00, category: 'Car Vault', date: 'Yesterday' },
+    { id: '3', merchant: 'Netflix', amount: 19.99, category: 'Subs', date: 'May 23' },
   ];
 
   const realHourlyRate = 32.50;
@@ -48,14 +57,17 @@ const Index = () => {
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
             <Link to="/" className="text-indigo-600">Dashboard</Link>
+            <Link to="/budgeting" className="hover:text-indigo-600">Budgeting</Link>
             <Link to="/transactions" className="hover:text-indigo-600">Ledger</Link>
             <Link to="/reports" className="hover:text-indigo-600">Reports</Link>
             <Link to="/accounts" className="hover:text-indigo-600">Accounts</Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Calendar size={20} />
-            </Button>
+            <Link to="/settings">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <SettingsIcon size={20} />
+              </Button>
+            </Link>
             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
               K
             </div>
@@ -93,6 +105,12 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
+          <Link to="/budgeting">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <PlusCircleIcon className="text-indigo-600" />
+              <span className="text-[10px] font-bold uppercase">Budget</span>
+            </Button>
+          </Link>
           <Link to="/transactions">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <ListTodo className="text-indigo-600" />
@@ -141,17 +159,39 @@ const Index = () => {
               <span className="text-[10px] font-bold uppercase">Gifts</span>
             </Button>
           </Link>
-          <Link to="/forecasting">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <TrendingUp className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Forecast</span>
-            </Button>
-          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center px-1">
+              <h3 className="text-lg font-semibold">Budget Buckets</h3>
+              <Link to="/budgeting" className="text-xs text-indigo-600 flex items-center gap-1 font-medium">
+                Manage All <ChevronRight size={14} />
+              </Link>
+            </div>
             <BucketList buckets={buckets} />
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold px-1">Recent Activity</h3>
+              <div className="grid gap-3">
+                {recentActivity.map((item) => (
+                  <Card key={item.id} className="p-4 hover:shadow-sm transition-shadow border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-600">
+                          <Tag size={18} />
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm">{item.merchant}</div>
+                          <div className="text-[10px] text-slate-500 uppercase font-bold">{item.category} • {item.date}</div>
+                        </div>
+                      </div>
+                      <div className="font-bold text-slate-900 dark:text-white">-${item.amount.toFixed(2)}</div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -212,5 +252,22 @@ const Index = () => {
     </div>
   );
 };
+
+const PlusCircleIcon = ({ className }: { className?: string }) => (
+  <svg 
+    xmlns="http://www.w3.org/2000/svg" 
+    width="24" 
+    height="24" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/>
+  </svg>
+);
 
 export default Index;

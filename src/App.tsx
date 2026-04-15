@@ -13,6 +13,8 @@ import Transactions from "./pages/Transactions";
 import Accounts from "./pages/Accounts";
 import Reports from "./pages/Reports";
 import DebtDestroyer from "./pages/DebtDestroyer";
+import Budgeting from "./pages/Budgeting";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import MobileNav from "./components/MobileNav";
 
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/accounts" element={<Accounts />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/debt-destroyer" element={<DebtDestroyer />} />
+            <Route path="/budgeting" element={<Budgeting />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <MobileNav />
