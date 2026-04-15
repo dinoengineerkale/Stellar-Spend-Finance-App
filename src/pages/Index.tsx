@@ -21,12 +21,12 @@ import {
   Flame,
   Plus,
   ArrowRightLeft,
-  Settings as SettingsIcon,
   ChevronRight,
   Tag
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const buckets = [
@@ -39,7 +39,7 @@ const Index = () => {
 
   const recentActivity = [
     { id: '1', merchant: 'Starbucks', amount: 6.50, category: 'Eating Out', date: 'Today' },
-    { id: '2', merchant: 'Shell Gas', amount: 85.00, category: 'Car Vault', date: 'Yesterday' },
+    { id: '2', merchant: 'Shell Gas', amount: 85.00, category: 'Vehicles', date: 'Yesterday' },
     { id: '3', merchant: 'Netflix', amount: 19.99, category: 'Subs', date: 'May 23' },
   ];
 
@@ -47,57 +47,29 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 md:pb-12">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-xl text-white">
-              <Rocket size={24} />
-            </div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Stellar Spend</h1>
-          </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
-            <Link to="/" className="text-indigo-600">Dashboard</Link>
-            <Link to="/budgeting" className="hover:text-indigo-600">Budgeting</Link>
-            <Link to="/transactions" className="hover:text-indigo-600">Ledger</Link>
-            <Link to="/reports" className="hover:text-indigo-600">Reports</Link>
-            <Link to="/accounts" className="hover:text-indigo-600">Accounts</Link>
-          </nav>
-          <div className="flex items-center gap-4">
-            <Link to="/settings">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <SettingsIcon size={20} />
-              </Button>
-            </Link>
-            <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-              K
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2">
+      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
             <InMyPocket income={5200} bills={1200} budgeted={2185} />
           </div>
           <div className="space-y-4">
-            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl">
               <CardHeader className="pb-2">
-                <CardTitle className="text-slate-500 text-xs uppercase flex items-center gap-2">
+                <CardTitle className="text-slate-500 text-[10px] uppercase tracking-widest flex items-center gap-2">
                   <Clock size={14} /> Real Take-Home
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-bold text-indigo-600">${realHourlyRate.toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
+                <div className="text-4xl font-black text-indigo-600">${realHourlyRate.toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
                 <p className="text-xs text-slate-500 mt-2">After taxes, bills, and mandatory savings.</p>
               </CardContent>
             </Card>
             
             <div className="grid grid-cols-2 gap-3">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 text-xs h-12">
+              <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 text-xs h-14 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none">
                 <Plus size={16} /> Expense
               </Button>
-              <Button variant="outline" className="gap-2 text-xs h-12">
+              <Button variant="outline" className="gap-2 text-xs h-14 rounded-2xl border-slate-200 dark:border-slate-800">
                 <ArrowRightLeft size={16} /> Transfer
               </Button>
             </div>
@@ -105,88 +77,45 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
-          <Link to="/budgeting">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <PlusCircleIcon className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Budget</span>
-            </Button>
-          </Link>
-          <Link to="/transactions">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <ListTodo className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Ledger</span>
-            </Button>
-          </Link>
-          <Link to="/reports">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <BarChart3 className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Reports</span>
-            </Button>
-          </Link>
-          <Link to="/accounts">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <Wallet className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Accounts</span>
-            </Button>
-          </Link>
-          <Link to="/debt-destroyer">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-orange-50 dark:hover:bg-orange-900/20">
-              <Flame className="text-orange-600" />
-              <span className="text-[10px] font-bold uppercase">Debt</span>
-            </Button>
-          </Link>
-          <Link to="/car-vault">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <Car className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Car</span>
-            </Button>
-          </Link>
-          <Link to="/academy">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <GraduationCap className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Academy</span>
-            </Button>
-          </Link>
-          <Link to="/subscriptions">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <RefreshCw className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Subs</span>
-            </Button>
-          </Link>
-          <Link to="/gift-galaxy">
-            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <Gift className="text-indigo-600" />
-              <span className="text-[10px] font-bold uppercase">Gifts</span>
-            </Button>
-          </Link>
+          <NavButton to="/budgeting" icon={PlusCircleIcon} label="Budget" />
+          <NavButton to="/transactions" icon={ListTodo} label="Ledger" />
+          <NavButton to="/reports" icon={BarChart3} label="Reports" />
+          <NavButton to="/accounts" icon={Wallet} label="Accounts" />
+          <NavButton to="/debt-destroyer" icon={Flame} label="Debt" color="text-orange-600" hover="hover:bg-orange-50" />
+          <NavButton to="/vehicles" icon={Car} label="Vehicles" />
+          <NavButton to="/academy" icon={GraduationCap} label="Academy" />
+          <NavButton to="/subscriptions" icon={RefreshCw} label="Subs" />
+          <NavButton to="/gift-galaxy" icon={Gift} label="Gifts" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-center px-1">
-              <h3 className="text-lg font-semibold">Budget Buckets</h3>
-              <Link to="/budgeting" className="text-xs text-indigo-600 flex items-center gap-1 font-medium">
-                Manage All <ChevronRight size={14} />
-              </Link>
+          <div className="lg:col-span-2 space-y-8">
+            <div className="space-y-4">
+              <div className="flex justify-between items-center px-1">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Budget Buckets</h3>
+                <Link to="/budgeting" className="text-xs text-indigo-600 flex items-center gap-1 font-bold uppercase tracking-wider">
+                  Manage All <ChevronRight size={14} />
+                </Link>
+              </div>
+              <BucketList buckets={buckets} />
             </div>
-            <BucketList buckets={buckets} />
             
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold px-1">Recent Activity</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white px-1">Recent Activity</h3>
               <div className="grid gap-3">
                 {recentActivity.map((item) => (
-                  <Card key={item.id} className="p-4 hover:shadow-sm transition-shadow border-slate-100 dark:border-slate-800">
+                  <Card key={item.id} className="p-5 hover:shadow-md transition-all border-none shadow-sm rounded-2xl bg-white dark:bg-slate-900">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-900 flex items-center justify-center text-slate-600">
-                          <Tag size={18} />
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-600">
+                          <Tag size={20} />
                         </div>
                         <div>
-                          <div className="font-bold text-sm">{item.merchant}</div>
-                          <div className="text-[10px] text-slate-500 uppercase font-bold">{item.category} • {item.date}</div>
+                          <div className="font-bold text-slate-900 dark:text-white">{item.merchant}</div>
+                          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{item.category} • {item.date}</div>
                         </div>
                       </div>
-                      <div className="font-bold text-slate-900 dark:text-white">-${item.amount.toFixed(2)}</div>
+                      <div className="font-black text-lg text-slate-900 dark:text-white">-${item.amount.toFixed(2)}</div>
                     </div>
                   </Card>
                 ))}
@@ -194,64 +123,72 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
+          <div className="space-y-8">
+            <Card className="rounded-3xl border-none shadow-lg overflow-hidden">
+              <CardHeader className="bg-emerald-600 text-white pb-6">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
-                  <TrendingUp size={16} className="text-green-500" /> Savings Goal
+                  <TrendingUp size={18} /> Savings Goal
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">$12,450</div>
-                <div className="text-xs text-slate-500 mb-4">Financial Advisor Envelope</div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-green-500 w-[65%]"></div>
+              <CardContent className="pt-6">
+                <div className="text-3xl font-black text-slate-900 dark:text-white">$12,450</div>
+                <div className="text-xs text-slate-500 mb-6">Financial Advisor Envelope</div>
+                <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
                 </div>
-                <div className="flex justify-between mt-2 text-[10px] font-medium uppercase text-slate-400">
+                <div className="flex justify-between mt-3 text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                   <span>Current</span>
                   <span>Goal: $20k</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-3xl border-none shadow-lg">
               <CardHeader>
                 <CardTitle className="text-sm font-bold">Upcoming Events</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
-                    <Gift size={18} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Mom's Birthday</div>
-                    <div className="text-xs text-slate-500">Sept 14 • Budget: $150</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <Calendar size={18} />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium">Best Friend's Wedding</div>
-                    <div className="text-xs text-slate-500">Oct 02 • Budget: $300</div>
-                  </div>
-                </div>
+              <CardContent className="space-y-5">
+                <EventItem icon={Gift} label="Mom's Birthday" date="Sept 14" budget={150} color="bg-pink-100 text-pink-600" />
+                <EventItem icon={Calendar} label="Best Friend's Wedding" date="Oct 02" budget={300} color="bg-blue-100 text-blue-600" />
               </CardContent>
             </Card>
           </div>
         </div>
       </main>
       
-      <footer className="mt-12 border-t border-slate-200 dark:border-slate-800 pt-8">
-        <div className="text-center text-slate-400 text-xs">
-          © {new Date().getFullYear()} Kale. All rights reserved.
+      <footer className="mt-12 border-t border-slate-200 dark:border-slate-800 pt-12 pb-8">
+        <div className="text-center text-slate-400 text-xs font-medium uppercase tracking-widest">
+          © {new Date().getFullYear()} Stellar Spend. All rights reserved.
         </div>
         <MadeWithDyad />
       </footer>
     </div>
   );
 };
+
+const NavButton = ({ to, icon: Icon, label, color = "text-indigo-600", hover = "hover:bg-indigo-50" }: any) => (
+  <Link to={to}>
+    <Button variant="outline" className={cn(
+      "w-full h-28 flex-col gap-3 bg-white dark:bg-slate-900 border-none shadow-sm hover:shadow-md transition-all rounded-3xl",
+      hover, "dark:hover:bg-indigo-900/20"
+    )}>
+      <Icon className={cn("w-6 h-6", color)} />
+      <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{label}</span>
+    </Button>
+  </Link>
+);
+
+const EventItem = ({ icon: Icon, label, date, budget, color }: any) => (
+  <div className="flex items-center gap-4 p-1">
+    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm", color)}>
+      <Icon size={20} />
+    </div>
+    <div>
+      <div className="text-sm font-bold text-slate-900 dark:text-white">{label}</div>
+      <div className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{date} • Budget: ${budget}</div>
+    </div>
+  </div>
+);
 
 const PlusCircleIcon = ({ className }: { className?: string }) => (
   <svg 
@@ -261,7 +198,7 @@ const PlusCircleIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
-    strokeWidth="2" 
+    strokeWidth="2.5" 
     strokeLinecap="round" 
     strokeLinejoin="round" 
     className={className}
