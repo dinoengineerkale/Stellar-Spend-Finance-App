@@ -3,12 +3,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Landmark, Plus, ShieldCheck, RefreshCw, ExternalLink } from "lucide-react";
+import { CreditCard, Landmark, Plus, ShieldCheck, RefreshCw, ExternalLink, ArrowRightLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBudget } from "@/context/BudgetContext";
+import { showSuccess } from "@/utils/toast";
 
 const Accounts = () => {
   const { accounts, addAccount } = useBudget();
@@ -21,36 +22,39 @@ const Accounts = () => {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Account Command</h1>
           <p className="text-slate-500">Secure bank & credit card integrations</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button className="gap-2 bg-indigo-600"><Plus size={18} /> Link New Account</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Link Financial Account</DialogTitle></DialogHeader>
-            <form onSubmit={(e: any) => {
-              e.preventDefault();
-              addAccount({
-                name: e.target.name.value,
-                type: e.target.type.value,
-                balance: parseFloat(e.target.balance.value),
-                lastSync: 'Just now',
-                status: 'connected'
-              });
-              setOpen(false);
-            }} className="space-y-4">
-              <div className="space-y-2"><Label>Institution Name</Label><Input name="name" placeholder="e.g. RBC, TD Bank" required /></div>
-              <div className="space-y-2">
-                <Label>Account Type</Label>
-                <select name="type" className="w-full p-2 border rounded-md">
-                  <option value="Checking">Checking</option>
-                  <option value="Savings">Savings</option>
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Investment">Investment</option>
-                </select>
-              </div>
-              <div className="space-y-2"><Label>Current Balance</Label><Input name="balance" type="number" step="0.01" required /></div>
-              <Button type="submit" className="w-full bg-indigo-600">Securely Link Account</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <TransferDialog accounts={accounts} />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button className="gap-2 bg-indigo-600"><Plus size={18} /> Link New Account</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Link Financial Account</DialogTitle></DialogHeader>
+              <form onSubmit={(e: any) => {
+                e.preventDefault();
+                addAccount({
+                  name: e.target.name.value,
+                  type: e.target.type.value,
+                  balance: parseFloat(e.target.balance.value),
+                  lastSync: 'Just now',
+                  status: 'connected'
+                });
+                setOpen(false);
+              }} className="space-y-4">
+                <div className="space-y-2"><Label>Institution Name</Label><Input name="name" placeholder="e.g. RBC, TD Bank" required /></div>
+                <div className="space-y-2">
+                  <Label>Account Type</Label>
+                  <select name="type" className="w-full p-2 border rounded-md">
+                    <option value="Checking">Checking</option>
+                    <option value="Savings">Savings</option>
+                    <option value="Credit Card">Credit Card</option>
+                    <option value="Investment">Investment</option>
+                  </select>
+                </div>
+                <div className="space-y-2"><Label>Current Balance</Label><Input name="balance" type="number" step="0.01" required /></div>
+                <Button type="submit" className="w-full bg-indigo-600">Securely Link Account</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 flex items-center gap-4">
@@ -89,6 +93,38 @@ const Accounts = () => {
         ))}
       </div>
     </div>
+  );
+};
+
+const TransferDialog = ({ accounts }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="outline" className="gap-2"><ArrowRightLeft size={18} /> Transfer</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Transfer Funds</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          showSuccess(`Transferred $${e.target.amount.value} from ${e.target.from.value} to ${e.target.to.value}`);
+          setOpen(false);
+        }} className="space-y-4">
+          <div className="space-y-2">
+            <Label>From Account</Label>
+            <select name="from" className="w-full p-2 border rounded-md">
+              {accounts.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>To Account</Label>
+            <select name="to" className="w-full p-2 border rounded-md">
+              {accounts.map((a: any) => <option key={a.id} value={a.name}>{a.name}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2"><Label>Amount</Label><Input name="amount" type="number" step="0.01" required /></div>
+          <Button type="submit" className="w-full bg-indigo-600">Execute Transfer</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 

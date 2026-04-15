@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flame, TrendingDown, AlertTriangle, ArrowRight, CreditCard, Plus } from "lucide-react";
+import { Flame, TrendingDown, TrendingUp, AlertTriangle, ArrowRight, CreditCard, Plus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useBudget } from "@/context/BudgetContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
