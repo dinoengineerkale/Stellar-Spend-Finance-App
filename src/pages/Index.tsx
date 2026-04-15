@@ -15,7 +15,9 @@ import {
   Clock,
   Gift,
   RefreshCw,
-  BarChart3
+  BarChart3,
+  ListTodo,
+  Wallet
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
@@ -34,13 +36,19 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex justify-between items-center">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
             <div className="bg-indigo-600 p-2 rounded-xl text-white">
               <Rocket size={24} />
             </div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Stellar Spend</h1>
           </div>
+          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
+            <Link to="/" className="text-indigo-600">Dashboard</Link>
+            <Link to="/transactions" className="hover:text-indigo-600">Ledger</Link>
+            <Link to="/reports" className="hover:text-indigo-600">Reports</Link>
+            <Link to="/accounts" className="hover:text-indigo-600">Accounts</Link>
+          </nav>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" className="rounded-full">
               <Calendar size={20} />
@@ -52,7 +60,7 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+      <main className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <InMyPocket income={5200} bills={1200} budgeted={2185} />
@@ -70,41 +78,55 @@ const Index = () => {
           </Card>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          <Link to="/transactions">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <ListTodo className="text-indigo-600" />
+              <span className="text-[10px] font-bold uppercase">Ledger</span>
+            </Button>
+          </Link>
+          <Link to="/reports">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <BarChart3 className="text-indigo-600" />
+              <span className="text-[10px] font-bold uppercase">Reports</span>
+            </Button>
+          </Link>
+          <Link to="/accounts">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <Wallet className="text-indigo-600" />
+              <span className="text-[10px] font-bold uppercase">Accounts</span>
+            </Button>
+          </Link>
           <Link to="/car-vault">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <Car className="text-indigo-600" />
-              <span className="text-xs font-medium">Car Vault</span>
+              <span className="text-[10px] font-bold uppercase">Car</span>
             </Button>
           </Link>
           <Link to="/academy">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <GraduationCap className="text-indigo-600" />
-              <span className="text-xs font-medium">Academy</span>
+              <span className="text-[10px] font-bold uppercase">Academy</span>
             </Button>
           </Link>
           <Link to="/subscriptions">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <RefreshCw className="text-indigo-600" />
-              <span className="text-xs font-medium">Subs</span>
+              <span className="text-[10px] font-bold uppercase">Subs</span>
             </Button>
           </Link>
           <Link to="/gift-galaxy">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <Gift className="text-indigo-600" />
-              <span className="text-xs font-medium">Gifts</span>
+              <span className="text-[10px] font-bold uppercase">Gifts</span>
             </Button>
           </Link>
           <Link to="/forecasting">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-              <BarChart3 className="text-indigo-600" />
-              <span className="text-xs font-medium">Forecast</span>
+              <TrendingUp className="text-indigo-600" />
+              <span className="text-[10px] font-bold uppercase">Forecast</span>
             </Button>
           </Link>
-          <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-            <CreditCard className="text-indigo-600" />
-            <span className="text-xs font-medium">Bank Sync</span>
-          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
