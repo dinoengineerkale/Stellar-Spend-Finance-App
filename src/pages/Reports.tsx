@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   BarChart, 
@@ -16,31 +16,34 @@ import {
   LineChart,
   Line
 } from 'recharts';
+import { useBudget } from "@/context/BudgetContext";
 
 const Reports = () => {
-  const spendingData = [
-    { name: 'Jan', amount: 2400 },
-    { name: 'Feb', amount: 1398 },
-    { name: 'Mar', amount: 9800 },
-    { name: 'Apr', amount: 3908 },
-    { name: 'May', amount: 4800 },
-  ];
+  const { transactions, buckets } = useBudget();
 
-  const categoryData = [
-    { name: 'Eating Out', value: 400 },
-    { name: 'Clothes', value: 300 },
-    { name: 'Tithing', value: 500 },
-    { name: 'Car', value: 800 },
-    { name: 'Academy', value: 900 },
-  ];
+  const spendingTrend = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = months.map(m => ({ name: m, amount: 0 }));
+    
+    transactions.forEach(tx => {
+      const month = new Date(tx.date).getMonth();
+      data[month].amount += tx.amount;
+    });
+    
+    return data.filter(d => d.amount > 0);
+  }, [transactions]);
 
-  const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'];
+  const categoryData = useMemo(() => {
+    return buckets.map(b => ({ name: b.name, value: b.spent }));
+  }, [buckets]);
+
+  const COLORS = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#3b82f6', '#64748b'];
 
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Stellar Reports</h1>
-        <p className="text-slate-500">Monthly and yearly financial overviews</p>
+        <p className="text-slate-500">Real-time financial analysis from your ledger</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -50,7 +53,7 @@ const Reports = () => {
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={spendingData}>
+              <BarChart data={spendingTrend}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -87,7 +90,7 @@ const Reports = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="grid grid-cols-1 gap-2 text-xs">
+            <div className="grid grid-cols-1 gap-2 text-xs ml-4">
               {categoryData.map((entry, index) => (
                 <div key={entry.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -105,7 +108,7 @@ const Reports = () => {
         </CardHeader>
         <CardContent className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={spendingData}>
+            <LineChart data={spendingTrend}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="name" />
               <YAxis />

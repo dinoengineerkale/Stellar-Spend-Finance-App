@@ -1,18 +1,21 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flame, TrendingDown, AlertTriangle, ArrowRight, CreditCard } from "lucide-react";
+import { Flame, TrendingDown, AlertTriangle, ArrowRight, CreditCard, Plus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { useBudget } from "@/context/BudgetContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const DebtDestroyer = () => {
-  const debts = [
-    { id: '1', name: 'ATB Mastercard', balance: 1240.50, limit: 5000, apr: 19.99, minPayment: 35 },
-    { id: '2', name: 'Student Loan', balance: 8500.00, limit: 10000, apr: 5.5, minPayment: 120 },
-  ];
+  const { debts, addDebt, updateDebt } = useBudget();
+  const [open, setOpen] = useState(false);
 
   const totalDebt = debts.reduce((acc, d) => acc + d.balance, 0);
+  const totalInterest = debts.reduce((acc, d) => acc + (d.balance * (d.apr / 100) / 12), 0);
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -21,9 +24,41 @@ const DebtDestroyer = () => {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Debt Destroyer</h1>
           <p className="text-slate-500">Strategic payoff planning & interest tracking</p>
         </div>
-        <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl text-orange-600 flex items-center gap-2">
-          <Flame size={20} />
-          <span className="font-bold">Snowball Mode</span>
+        <div className="flex gap-2">
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 bg-indigo-600"><Plus size={18} /> Add Debt</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Add Debt Account</DialogTitle></DialogHeader>
+              <form onSubmit={(e: any) => {
+                e.preventDefault();
+                addDebt({
+                  name: e.target.name.value,
+                  balance: parseFloat(e.target.balance.value),
+                  limit: parseFloat(e.target.limit.value),
+                  apr: parseFloat(e.target.apr.value),
+                  minPayment: parseFloat(e.target.min.value)
+                });
+                setOpen(false);
+              }} className="space-y-4">
+                <div className="space-y-2"><Label>Account Name</Label><Input name="name" required /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Balance ($)</Label><Input name="balance" type="number" step="0.01" required /></div>
+                  <div className="space-y-2"><Label>Limit ($)</Label><Input name="limit" type="number" step="0.01" required /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>APR (%)</Label><Input name="apr" type="number" step="0.01" required /></div>
+                  <div className="space-y-2"><Label>Min Payment ($)</Label><Input name="min" type="number" step="0.01" required /></div>
+                </div>
+                <Button type="submit" className="w-full bg-indigo-600">Add Account</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+          <div className="p-3 bg-orange-100 dark:bg-orange-900/20 rounded-xl text-orange-600 flex items-center gap-2">
+            <Flame size={20} />
+            <span className="font-bold">Snowball Mode</span>
+          </div>
         </div>
       </div>
 
@@ -38,8 +73,8 @@ const DebtDestroyer = () => {
           <CardContent>
             <div className="text-4xl font-bold">${totalDebt.toLocaleString()}</div>
             <div className="mt-4 flex items-center gap-2 text-sm text-green-400">
-              <TrendingDown size={16} />
-              <span>Down 4.2% from last month</span>
+              <TrendingUp size={16} className="rotate-180" />
+              <span>Tracking payoff progress</span>
             </div>
           </CardContent>
         </Card>
@@ -51,7 +86,7 @@ const DebtDestroyer = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">$142.50</div>
+            <div className="text-2xl font-bold text-orange-600">${totalInterest.toFixed(2)}</div>
             <p className="text-xs text-slate-500 mt-1">Estimated interest charges this month across all accounts.</p>
             <Button variant="link" className="p-0 h-auto text-orange-600 text-xs mt-2">See breakdown <ArrowRight size={12} /></Button>
           </CardContent>

@@ -83,5 +83,23 @@ export interface SchoolPeriod {
   id: string;
   startMonth: string;
   endMonth: string;
-  incomeMultiplier: number; // e.g. 0.6 for 60% income
+  incomeMultiplier: number;
+}
+
+export interface Subscription {
+  id: string;
+  name: string;
+  amount: number;
+  frequency: 'monthly' | 'yearly';
+  nextBilling: string;
+  category: string;
+}
+
+export interface Debt {
+  id: string;
+  name: string;
+  balance: number;
+  limit: number;
+  apr: number;
+  minPayment: number;
 }

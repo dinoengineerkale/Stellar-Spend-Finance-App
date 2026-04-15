@@ -26,30 +26,21 @@ import {
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { cn } from "@/lib/utils";
+import { useBudget } from "@/context/BudgetContext";
 
 const Index = () => {
-  const buckets = [
-    { id: '1', name: 'Clothes', budgeted: 200, spent: 145, icon: 'Shirt', color: 'bg-blue-500' },
-    { id: '2', name: 'Eating Out', budgeted: 400, spent: 380, icon: 'Utensils', color: 'bg-orange-500' },
-    { id: '3', name: 'Tithing', budgeted: 500, spent: 500, icon: 'Heart', color: 'bg-red-500' },
-    { id: '4', name: 'Phone Bill', budgeted: 85, spent: 85, icon: 'Smartphone', color: 'bg-indigo-500' },
-    { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp', color: 'bg-green-500' },
-  ];
+  const { buckets, transactions, currentMonthlyIncome, fixedMonthlyBills, giftEvents } = useBudget();
 
-  const recentActivity = [
-    { id: '1', merchant: 'Starbucks', amount: 6.50, category: 'Eating Out', date: 'Today' },
-    { id: '2', merchant: 'Shell Gas', amount: 85.00, category: 'Vehicles', date: 'Yesterday' },
-    { id: '3', merchant: 'Netflix', amount: 19.99, category: 'Subs', date: 'May 23' },
-  ];
-
-  const realHourlyRate = 32.50;
+  const totalBudgeted = buckets.reduce((acc, b) => acc + b.budgeted, 0);
+  const recentActivity = transactions.slice(0, 3);
+  const realHourlyRate = (currentMonthlyIncome - fixedMonthlyBills - totalBudgeted) / 160; // Approx 160 working hours
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 md:pb-12">
       <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <InMyPocket income={5200} bills={1200} budgeted={2185} />
+            <InMyPocket income={currentMonthlyIncome} bills={fixedMonthlyBills} budgeted={totalBudgeted} />
           </div>
           <div className="space-y-4">
             <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl">
@@ -59,8 +50,8 @@ const Index = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-4xl font-black text-indigo-600">${realHourlyRate.toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
-                <p className="text-xs text-slate-500 mt-2">After taxes, bills, and mandatory savings.</p>
+                <div className="text-4xl font-black text-indigo-600">${Math.max(0, realHourlyRate).toFixed(2)}<span className="text-lg text-slate-400 font-normal">/hr</span></div>
+                <p className="text-xs text-slate-500 mt-2">After taxes, bills, and all budget allocations.</p>
               </CardContent>
             </Card>
             
@@ -72,9 +63,11 @@ const Index = () => {
                   </Button>
                 }
               />
-              <Button variant="outline" className="gap-2 text-xs h-14 rounded-2xl border-slate-200 dark:border-slate-800">
-                <ArrowRightLeft size={16} /> Transfer
-              </Button>
+              <Link to="/accounts" className="w-full">
+                <Button variant="outline" className="w-full gap-2 text-xs h-14 rounded-2xl border-slate-200 dark:border-slate-800">
+                  <ArrowRightLeft size={16} /> Transfer
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -115,7 +108,7 @@ const Index = () => {
                         </div>
                         <div>
                           <div className="font-bold text-slate-900 dark:text-white">{item.merchant}</div>
-                          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{item.category} • {item.date}</div>
+                          <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">{item.category} • {new Date(item.date).toLocaleDateString()}</div>
                         </div>
                       </div>
                       <div className="font-black text-lg text-slate-900 dark:text-white">-${item.amount.toFixed(2)}</div>
@@ -151,8 +144,16 @@ const Index = () => {
                 <CardTitle className="text-sm font-bold">Upcoming Events</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
-                <EventItem icon={Gift} label="Mom's Birthday" date="Sept 14" budget={150} budget_saved={120} color="bg-pink-100 text-pink-600" />
-                <EventItem icon={Calendar} label="Best Friend's Wedding" date="Oct 02" budget={300} budget_saved={0} color="bg-blue-100 text-blue-600" />
+                {giftEvents.slice(0, 2).map(event => (
+                  <EventItem 
+                    key={event.id}
+                    icon={Gift} 
+                    label={event.person} 
+                    date={new Date(event.date).toLocaleDateString()} 
+                    budget={event.budget} 
+                    color={event.isBought ? "bg-emerald-100 text-emerald-600" : "bg-pink-100 text-pink-600"} 
+                  />
+                ))}
               </CardContent>
             </Card>
           </div>

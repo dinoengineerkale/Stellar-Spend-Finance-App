@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { 
   Transaction, 
   Bucket, 
@@ -10,7 +10,9 @@ import {
   GiftEvent, 
   VehicleExpense,
   Paystub,
-  SchoolPeriod
+  SchoolPeriod,
+  Subscription,
+  Debt
 } from "@/types/budget";
 import { showSuccess, showError } from "@/utils/toast";
 
@@ -34,7 +36,6 @@ interface BudgetContextType {
   updateGiftEvent: (id: string, updates: Partial<GiftEvent>) => void;
   deleteGiftEvent: (id: string) => void;
   syncContacts: () => void;
-  // Financial Profile
   paystubs: Paystub[];
   addPaystub: (stub: Omit<Paystub, 'id'>) => void;
   deletePaystub: (id: string) => void;
@@ -45,6 +46,13 @@ interface BudgetContextType {
   setBaseMonthlyIncome: (val: number) => void;
   fixedMonthlyBills: number;
   setFixedMonthlyBills: (val: number) => void;
+  subscriptions: Subscription[];
+  addSubscription: (sub: Omit<Subscription, 'id'>) => void;
+  deleteSubscription: (id: string) => void;
+  debts: Debt[];
+  addDebt: (debt: Omit<Debt, 'id'>) => void;
+  updateDebt: (id: string, updates: Partial<Debt>) => void;
+  currentMonthlyIncome: number;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
@@ -93,7 +101,6 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     { id: '1', person: 'Mom', relationship: 'Family', date: '2024-09-14', type: 'Birthday', budget: 150, saved: 120, description: 'New gardening tools', isBought: false },
   ]);
 
-  // Financial Profile State
   const [paystubs, setPaystubs] = useState<Paystub[]>([
     { id: '1', date: '2024-05-15', fileName: 'paystub_may_15.pdf', grossPay: 3200, netPay: 2350, deductions: 850 },
   ]);
@@ -103,17 +110,27 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [baseMonthlyIncome, setBaseMonthlyIncome] = useState(5200);
   const [fixedMonthlyBills, setFixedMonthlyBills] = useState(1200);
 
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([
+    { id: '1', name: 'Netflix', amount: 19.99, frequency: 'monthly', nextBilling: '2024-06-15', category: 'Entertainment' },
+    { id: '2', name: 'Spotify', amount: 10.99, frequency: 'monthly', nextBilling: '2024-06-20', category: 'Music' },
+  ]);
+
+  const [debts, setDebts] = useState<Debt[]>([
+    { id: '1', name: 'ATB Mastercard', balance: 1240.50, limit: 5000, apr: 19.99, minPayment: 35 },
+    { id: '2', name: 'Student Loan', balance: 8500.00, limit: 10000, apr: 5.5, minPayment: 120 },
+  ]);
+
+  const currentMonthlyIncome = useMemo(() => {
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const activePeriod = schoolPeriods.find(p => currentMonthStr >= p.startMonth && currentMonthStr <= p.endMonth);
+    return activePeriod ? baseMonthlyIncome * activePeriod.incomeMultiplier : baseMonthlyIncome;
+  }, [baseMonthlyIncome, schoolPeriods]);
+
   const addTransaction = (tx: Omit<Transaction, 'id' | 'status'>) => {
     const newTx: Transaction = { ...tx, id: Math.random().toString(36).substr(2, 9), status: 'completed' };
     setTransactions([newTx, ...transactions]);
-    
-    // Update bucket spent amount
-    setBuckets(prev => prev.map(b => {
-      if (b.name.toLowerCase() === tx.category.toLowerCase()) {
-        return { ...b, spent: b.spent + tx.amount };
-      }
-      return b;
-    }));
+    setBuckets(prev => prev.map(b => b.name.toLowerCase() === tx.category.toLowerCase() ? { ...b, spent: b.spent + tx.amount } : b));
   };
 
   const updateBucket = (id: string, amount: number) => {
@@ -123,19 +140,9 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const saveBuckets = () => showSuccess("Budget allocations saved successfully!");
 
   const addVehicle = (v: Omit<Vehicle, 'id' | 'expenses'>) => {
-    const newVehicle: Vehicle = { 
-      ...v, 
-      id: Math.random().toString(36).substr(2, 9), 
-      expenses: [
-        { id: 'e1', type: 'gas', label: 'Fuel / Gas', value: 0, date: new Date().toISOString() },
-        { id: 'e2', type: 'maintenance', label: 'Maintenance & Repairs', value: 0, date: new Date().toISOString() },
-        { id: 'e3', type: 'insurance', label: 'Insurance', value: 0, date: new Date().toISOString() },
-        { id: 'e4', type: 'parking', label: 'Parking', value: 0, date: new Date().toISOString() },
-        { id: 'e5', type: 'tickets', label: 'Tickets & Fines', value: 0, date: new Date().toISOString() },
-      ]
-    };
+    const newVehicle: Vehicle = { ...v, id: Math.random().toString(36).substr(2, 9), expenses: [] };
     setVehicles([...vehicles, newVehicle]);
-    showSuccess(`${v.name} added to your fleet!`);
+    showSuccess(`${v.name} added to fleet!`);
   };
 
   const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
@@ -143,107 +150,81 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const addVehicleExpense = (vehicleId: string, expense: Omit<VehicleExpense, 'id'>) => {
-    setVehicles(vehicles.map(v => {
-      if (v.id === vehicleId) {
-        const existing = v.expenses.find(e => e.type === expense.type);
-        if (existing) {
-          return {
-            ...v,
-            expenses: v.expenses.map(e => e.type === expense.type ? { ...e, value: e.value + expense.value } : e)
-          };
-        }
-        return {
-          ...v,
-          expenses: [...v.expenses, { ...expense, id: Math.random().toString(36).substr(2, 9) }]
-        };
-      }
-      return v;
-    }));
-    addTransaction({
-      date: expense.date,
-      merchant: `Vehicle: ${expense.label}`,
-      amount: expense.value,
-      category: 'Vehicles'
-    });
+    setVehicles(vehicles.map(v => v.id === vehicleId ? { ...v, expenses: [...v.expenses, { ...expense, id: Math.random().toString(36).substr(2, 9) }] } : v));
+    addTransaction({ date: expense.date, merchant: `Vehicle: ${expense.label}`, amount: expense.value, category: 'Vehicles' });
   };
 
   const updateVehicleExpense = (vehicleId: string, expenseId: string, value: number) => {
-    setVehicles(vehicles.map(v => v.id === vehicleId ? {
-      ...v,
-      expenses: v.expenses.map(e => e.id === expenseId ? { ...e, value } : e)
-    } : v));
-    showSuccess("Expense updated!");
+    setVehicles(vehicles.map(v => v.id === vehicleId ? { ...v, expenses: v.expenses.map(e => e.id === expenseId ? { ...e, value } : e) } : v));
   };
 
   const addCourse = (course: Omit<Course, 'id'>) => {
     setCourses([...courses, { ...course, id: Math.random().toString(36).substr(2, 9) }]);
-    showSuccess(`${course.name} added to Academy!`);
+    showSuccess(`${course.name} added!`);
   };
 
   const updateCourse = (id: string, updates: Partial<Course>) => {
     setCourses(courses.map(c => c.id === id ? { ...c, ...updates } : c));
-    showSuccess("Course details updated!");
   };
 
   const addAccount = (acc: Omit<Account, 'id'>) => {
     setAccounts([...accounts, { ...acc, id: Math.random().toString(36).substr(2, 9) }]);
-    showSuccess(`${acc.name} linked successfully!`);
+    showSuccess(`${acc.name} linked!`);
   };
 
   const updateGiftEvent = (id: string, updates: Partial<GiftEvent>) => {
     setGiftEvents(giftEvents.map(e => e.id === id ? { ...e, ...updates } : e));
-    showSuccess("Event updated!");
   };
 
   const deleteGiftEvent = (id: string) => {
     setGiftEvents(giftEvents.filter(e => e.id !== id));
-    showSuccess("Event removed from Galaxy.");
   };
 
-  const syncContacts = () => {
-    showSuccess("Synced 42 contacts from your device!");
-  };
+  const syncContacts = () => showSuccess("Synced contacts!");
 
   const addPaystub = (stub: Omit<Paystub, 'id'>) => {
-    if (paystubs.some(p => p.date === stub.date)) {
-      showError("A paystub already exists for this date.");
-      return;
-    }
-    const newStub = { ...stub, id: Math.random().toString(36).substr(2, 9) };
-    setPaystubs([newStub, ...paystubs]);
+    if (paystubs.some(p => p.date === stub.date)) return showError("Duplicate date!");
+    setPaystubs([{ ...stub, id: Math.random().toString(36).substr(2, 9) }, ...paystubs]);
     setBaseMonthlyIncome(stub.netPay * 2);
-    showSuccess("Paystub processed and income baseline updated!");
+    showSuccess("Paystub added!");
   };
 
-  const deletePaystub = (id: string) => {
-    setPaystubs(paystubs.filter(p => p.id !== id));
-    showSuccess("Paystub record deleted.");
-  };
+  const deletePaystub = (id: string) => setPaystubs(paystubs.filter(p => p.id !== id));
 
   const addSchoolPeriod = (period: Omit<SchoolPeriod, 'id'>) => {
-    if (schoolPeriods.some(p => p.startMonth === period.startMonth)) {
-      showError("A school phase already starts in this month.");
-      return;
-    }
+    if (schoolPeriods.some(p => p.startMonth === period.startMonth)) return showError("Duplicate start month!");
     setSchoolPeriods([...schoolPeriods, { ...period, id: Math.random().toString(36).substr(2, 9) }]);
-    showSuccess("School period recorded for forecasting.");
+    showSuccess("School period added!");
   };
 
-  const deleteSchoolPeriod = (id: string) => {
-    setSchoolPeriods(schoolPeriods.filter(p => p.id !== id));
-    showSuccess("School phase removed.");
+  const deleteSchoolPeriod = (id: string) => setSchoolPeriods(schoolPeriods.filter(p => p.id !== id));
+
+  const addSubscription = (sub: Omit<Subscription, 'id'>) => {
+    setSubscriptions([...subscriptions, { ...sub, id: Math.random().toString(36).substr(2, 9) }]);
+    showSuccess(`${sub.name} added!`);
+  };
+
+  const deleteSubscription = (id: string) => setSubscriptions(subscriptions.filter(s => s.id !== id));
+
+  const addDebt = (debt: Omit<Debt, 'id'>) => {
+    setDebts([...debts, { ...debt, id: Math.random().toString(36).substr(2, 9) }]);
+    showSuccess(`${debt.name} added!`);
+  };
+
+  const updateDebt = (id: string, updates: Partial<Debt>) => {
+    setDebts(debts.map(d => d.id === id ? { ...d, ...updates } : d));
   };
 
   return (
     <BudgetContext.Provider value={{
-      transactions, addTransaction,
-      buckets, updateBucket, saveBuckets,
+      transactions, addTransaction, buckets, updateBucket, saveBuckets,
       vehicles, addVehicle, updateVehicle, addVehicleExpense, updateVehicleExpense,
-      courses, addCourse, updateCourse,
-      accounts, addAccount,
+      courses, addCourse, updateCourse, accounts, addAccount,
       giftEvents, updateGiftEvent, deleteGiftEvent, syncContacts,
       paystubs, addPaystub, deletePaystub, schoolPeriods, addSchoolPeriod, deleteSchoolPeriod,
-      baseMonthlyIncome, setBaseMonthlyIncome, fixedMonthlyBills, setFixedMonthlyBills
+      baseMonthlyIncome, setBaseMonthlyIncome, fixedMonthlyBills, setFixedMonthlyBills,
+      subscriptions, addSubscription, deleteSubscription, debts, addDebt, updateDebt,
+      currentMonthlyIncome
     }}>
       {children}
     </BudgetContext.Provider>
