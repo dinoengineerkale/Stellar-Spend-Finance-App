@@ -3,13 +3,12 @@
 import React from 'react';
 import InMyPocket from "@/components/InMyPocket";
 import BucketList from "@/components/BucketList";
+import AddTransactionDialog from "@/components/AddTransactionDialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  Rocket, 
   TrendingUp, 
   Calendar, 
-  CreditCard, 
   Car, 
   GraduationCap,
   Clock,
@@ -66,9 +65,13 @@ const Index = () => {
             </Card>
             
             <div className="grid grid-cols-2 gap-3">
-              <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 text-xs h-14 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none">
-                <Plus size={16} /> Expense
-              </Button>
+              <AddTransactionDialog 
+                trigger={
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 gap-2 text-xs h-14 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none">
+                    <Plus size={16} /> Expense
+                  </Button>
+                }
+              />
               <Button variant="outline" className="gap-2 text-xs h-14 rounded-2xl border-slate-200 dark:border-slate-800">
                 <ArrowRightLeft size={16} /> Transfer
               </Button>

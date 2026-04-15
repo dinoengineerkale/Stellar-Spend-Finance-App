@@ -4,6 +4,7 @@ import React from 'react';
 import { Link, useLocation } from "react-router-dom";
 import { LayoutDashboard, ListTodo, BarChart3, Wallet, PlusCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import AddTransactionDialog from "./AddTransactionDialog";
 
 const MobileNav = () => {
   const location = useLocation();
@@ -24,12 +25,16 @@ const MobileNav = () => {
           
           if (item.primary) {
             return (
-              <button 
+              <AddTransactionDialog 
                 key={item.label}
-                className="bg-indigo-600 text-white p-3 rounded-full -mt-10 shadow-lg shadow-indigo-200 dark:shadow-none border-4 border-slate-50 dark:border-slate-950"
-              >
-                <item.icon size={24} />
-              </button>
+                trigger={
+                  <button 
+                    className="bg-indigo-600 text-white p-3 rounded-full -mt-10 shadow-lg shadow-indigo-200 dark:shadow-none border-4 border-slate-50 dark:border-slate-950"
+                  >
+                    <item.icon size={24} />
+                  </button>
+                }
+              />
             );
           }
 
