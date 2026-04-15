@@ -13,13 +13,14 @@ import {
   Car, 
   GraduationCap,
   Clock,
-  Gift
+  Gift,
+  RefreshCw,
+  BarChart3
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 
 const Index = () => {
-  // Mock data
   const buckets = [
     { id: '1', name: 'Clothes', budgeted: 200, spent: 145, icon: 'Shirt' },
     { id: '2', name: 'Eating Out', budgeted: 400, spent: 380, icon: 'Utensils' },
@@ -28,11 +29,10 @@ const Index = () => {
     { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp' },
   ];
 
-  const realHourlyRate = 32.50; // Calculated after taxes and bills
+  const realHourlyRate = 32.50;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
-      {/* Header */}
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-2">
@@ -53,7 +53,6 @@ const Index = () => {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
-        {/* Top Row: In My Pocket & Real Hourly */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
             <InMyPocket income={5200} bills={1200} budgeted={2185} />
@@ -71,38 +70,48 @@ const Index = () => {
           </Card>
         </div>
 
-        {/* Quick Navigation */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Link to="/car-vault">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <Car className="text-indigo-600" />
-              <span>Car Vault</span>
+              <span className="text-xs font-medium">Car Vault</span>
             </Button>
           </Link>
           <Link to="/academy">
             <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
               <GraduationCap className="text-indigo-600" />
-              <span>Academy</span>
+              <span className="text-xs font-medium">Academy</span>
+            </Button>
+          </Link>
+          <Link to="/subscriptions">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <RefreshCw className="text-indigo-600" />
+              <span className="text-xs font-medium">Subs</span>
+            </Button>
+          </Link>
+          <Link to="/gift-galaxy">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <Gift className="text-indigo-600" />
+              <span className="text-xs font-medium">Gifts</span>
+            </Button>
+          </Link>
+          <Link to="/forecasting">
+            <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
+              <BarChart3 className="text-indigo-600" />
+              <span className="text-xs font-medium">Forecast</span>
             </Button>
           </Link>
           <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
-            <Gift className="text-indigo-600" />
-            <span>Gift Galaxy</span>
-          </Button>
-          <Button variant="outline" className="w-full h-24 flex-col gap-2 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20">
             <CreditCard className="text-indigo-600" />
-            <span>Bank Sync</span>
+            <span className="text-xs font-medium">Bank Sync</span>
           </Button>
         </div>
 
-        {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left: Buckets */}
           <div className="lg:col-span-2">
             <BucketList buckets={buckets} />
           </div>
 
-          {/* Right: Upcoming & Alerts */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
