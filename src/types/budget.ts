@@ -66,6 +66,8 @@ export interface GiftEvent {
   type: string;
   budget: number;
   saved: number;
+  description?: string;
+  isBought?: boolean;
 }
 
 export interface Paystub {

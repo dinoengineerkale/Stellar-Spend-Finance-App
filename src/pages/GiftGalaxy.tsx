@@ -3,14 +3,16 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, UserPlus, Search, Edit2 } from "lucide-react";
+import { Heart, UserPlus, Search, Edit2, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useBudget } from "@/context/BudgetContext";
+import { cn } from "@/lib/utils";
 
 const GiftGalaxy = () => {
-  const { giftEvents, updateGiftEvent, syncContacts } = useBudget();
+  const { giftEvents, updateGiftEvent, deleteGiftEvent, syncContacts } = useBudget();
   const [search, setSearch] = useState("");
 
   const filteredEvents = giftEvents.filter(e => e.person.toLowerCase().includes(search.toLowerCase()));
@@ -34,19 +36,43 @@ const GiftGalaxy = () => {
         {filteredEvents.map((event) => {
           const progress = (event.saved / event.budget) * 100;
           return (
-            <Card key={event.id} className="overflow-hidden border-l-4 border-l-pink-500">
+            <Card key={event.id} className={cn(
+              "overflow-hidden border-l-4 transition-all",
+              event.isBought ? "border-l-emerald-500 opacity-75" : "border-l-pink-500"
+            )}>
               <CardContent className="p-6">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center text-pink-600"><Heart size={28} /></div>
+                    <button 
+                      onClick={() => updateGiftEvent(event.id, { isBought: !event.isBought })}
+                      className={cn(
+                        "w-14 h-14 rounded-full flex items-center justify-center transition-colors",
+                        event.isBought ? "bg-emerald-50 text-emerald-600" : "bg-pink-50 text-pink-600"
+                      )}
+                    >
+                      {event.isBought ? <CheckCircle2 size={28} /> : <Heart size={28} />}
+                    </button>
                     <div>
-                      <div className="font-bold text-xl flex items-center gap-2">
+                      <div className={cn(
+                        "font-bold text-xl flex items-center gap-2",
+                        event.isBought && "line-through text-slate-400"
+                      )}>
                         {event.person}
-                        <EditEventDialog event={event} onSave={(updates) => updateGiftEvent(event.id, updates)} />
+                        <div className="flex gap-1">
+                          <EditEventDialog event={event} onSave={(updates) => updateGiftEvent(event.id, updates)} />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={() => deleteGiftEvent(event.id)}>
+                            <Trash2 size={14} />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="text-sm text-slate-500 flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded-full border text-[10px]">{event.relationship}</span>
-                        <span>• {event.type} on {new Date(event.date).toLocaleDateString()}</span>
+                      <div className="text-sm text-slate-500 flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded-full border text-[10px]">{event.relationship}</span>
+                          <span>• {event.type} on {new Date(event.date).toLocaleDateString()}</span>
+                        </div>
+                        {event.description && (
+                          <p className="text-xs italic text-slate-400">"{event.description}"</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -56,9 +82,15 @@ const GiftGalaxy = () => {
                       <div className="text-2xl font-black text-slate-900 dark:text-white">${event.budget}</div>
                     </div>
                     <div className="w-full md:w-48 space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-500"><span>SAVED: ${event.saved}</span><span>{Math.round(progress)}%</span></div>
+                      <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                        <span>SAVED: ${event.saved}</span>
+                        <span>{Math.round(progress)}%</span>
+                      </div>
                       <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-pink-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+                        <div className={cn(
+                          "h-full transition-all duration-500",
+                          event.isBought ? "bg-emerald-500" : "bg-pink-500"
+                        )} style={{ width: `${progress}%` }} />
                       </div>
                     </div>
                   </div>
@@ -82,15 +114,25 @@ const EditEventDialog = ({ event, onSave }: any) => {
         <form onSubmit={(e: any) => {
           e.preventDefault();
           onSave({
+            person: e.target.person.value,
+            relationship: e.target.relationship.value,
             budget: parseFloat(e.target.budget.value),
             saved: parseFloat(e.target.saved.value),
-            date: e.target.date.value
+            date: e.target.date.value,
+            description: e.target.description.value
           });
           setOpen(false);
         }} className="space-y-4">
-          <div className="space-y-2"><Label>Budget Goal ($)</Label><Input name="budget" type="number" defaultValue={event.budget} required /></div>
-          <div className="space-y-2"><Label>Amount Saved ($)</Label><Input name="saved" type="number" defaultValue={event.saved} required /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Person</Label><Input name="person" defaultValue={event.person} required /></div>
+            <div className="space-y-2"><Label>Relationship</Label><Input name="relationship" defaultValue={event.relationship} required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Budget Goal ($)</Label><Input name="budget" type="number" defaultValue={event.budget} required /></div>
+            <div className="space-y-2"><Label>Amount Saved ($)</Label><Input name="saved" type="number" defaultValue={event.saved} required /></div>
+          </div>
           <div className="space-y-2"><Label>Event Date</Label><Input name="date" type="date" defaultValue={event.date} required /></div>
+          <div className="space-y-2"><Label>Gift Description / Idea</Label><Textarea name="description" defaultValue={event.description} placeholder="e.g. New gardening tools, blue sweater..." /></div>
           <Button type="submit" className="w-full bg-pink-600">Update Event</Button>
         </form>
       </DialogContent>

@@ -16,7 +16,8 @@ import {
   History, 
   GraduationCap,
   Calendar,
-  FileText
+  FileText,
+  Trash2
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useBudget } from "@/context/BudgetContext";
@@ -32,8 +33,10 @@ const Settings = () => {
     setFixedMonthlyBills,
     paystubs,
     addPaystub,
+    deletePaystub,
     schoolPeriods,
-    addSchoolPeriod
+    addSchoolPeriod,
+    deleteSchoolPeriod
   } = useBudget();
 
   const [activeTab, setActiveTab] = useState('profile');
@@ -46,7 +49,6 @@ const Settings = () => {
     const tid = showLoading("Analyzing paystub PDF...");
     setIsUploading(true);
 
-    // Simulate OCR processing
     setTimeout(() => {
       dismissToast(tid);
       addPaystub({
@@ -163,9 +165,14 @@ const Settings = () => {
                           <div className="text-[10px] text-slate-500 uppercase font-bold">{new Date(stub.date).toLocaleDateString()}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-black text-indigo-600">${stub.netPay.toLocaleString()}</div>
-                        <div className="text-[10px] text-slate-400 uppercase">Net Take-Home</div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <div className="font-black text-indigo-600">${stub.netPay.toLocaleString()}</div>
+                          <div className="text-[10px] text-slate-400 uppercase">Net Take-Home</div>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-slate-400 hover:text-red-500" onClick={() => deletePaystub(stub.id)}>
+                          <Trash2 size={18} />
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -194,10 +201,15 @@ const Settings = () => {
                           <div className="text-xs text-amber-700 dark:text-amber-400">{period.startMonth} to {period.endMonth}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge className="bg-amber-200 text-amber-800 hover:bg-amber-200 border-none">
-                          {Math.round((1 - period.incomeMultiplier) * 100)}% Income Reduction
-                        </Badge>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <Badge className="bg-amber-200 text-amber-800 hover:bg-amber-200 border-none">
+                            {Math.round((1 - period.incomeMultiplier) * 100)}% Income Reduction
+                          </Badge>
+                        </div>
+                        <Button variant="ghost" size="icon" className="text-amber-600 hover:text-red-500" onClick={() => deleteSchoolPeriod(period.id)}>
+                          <Trash2 size={18} />
+                        </Button>
                       </div>
                     </div>
                   ))}

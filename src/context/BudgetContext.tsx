@@ -12,7 +12,7 @@ import {
   Paystub,
   SchoolPeriod
 } from "@/types/budget";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showError } from "@/utils/toast";
 
 interface BudgetContextType {
   transactions: Transaction[];
@@ -32,12 +32,15 @@ interface BudgetContextType {
   addAccount: (acc: Omit<Account, 'id'>) => void;
   giftEvents: GiftEvent[];
   updateGiftEvent: (id: string, updates: Partial<GiftEvent>) => void;
+  deleteGiftEvent: (id: string) => void;
   syncContacts: () => void;
   // Financial Profile
   paystubs: Paystub[];
   addPaystub: (stub: Omit<Paystub, 'id'>) => void;
+  deletePaystub: (id: string) => void;
   schoolPeriods: SchoolPeriod[];
   addSchoolPeriod: (period: Omit<SchoolPeriod, 'id'>) => void;
+  deleteSchoolPeriod: (id: string) => void;
   baseMonthlyIncome: number;
   setBaseMonthlyIncome: (val: number) => void;
   fixedMonthlyBills: number;
@@ -58,6 +61,7 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     { id: '3', name: 'Tithing', budgeted: 500, spent: 500, icon: 'Heart', color: 'bg-red-500' },
     { id: '4', name: 'Phone Bill', budgeted: 85, spent: 85, icon: 'Smartphone', color: 'bg-indigo-500' },
     { id: '5', name: 'Savings (Advisor)', budgeted: 1000, spent: 0, icon: 'TrendingUp', color: 'bg-green-500' },
+    { id: '6', name: 'Vehicles', budgeted: 500, spent: 85, icon: 'Car', color: 'bg-slate-500' },
   ]);
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([
@@ -86,7 +90,7 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   ]);
 
   const [giftEvents, setGiftEvents] = useState<GiftEvent[]>([
-    { id: '1', person: 'Mom', relationship: 'Family', date: '2024-09-14', type: 'Birthday', budget: 150, saved: 120 },
+    { id: '1', person: 'Mom', relationship: 'Family', date: '2024-09-14', type: 'Birthday', budget: 150, saved: 120, description: 'New gardening tools', isBought: false },
   ]);
 
   // Financial Profile State
@@ -102,6 +106,14 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const addTransaction = (tx: Omit<Transaction, 'id' | 'status'>) => {
     const newTx: Transaction = { ...tx, id: Math.random().toString(36).substr(2, 9), status: 'completed' };
     setTransactions([newTx, ...transactions]);
+    
+    // Update bucket spent amount
+    setBuckets(prev => prev.map(b => {
+      if (b.name.toLowerCase() === tx.category.toLowerCase()) {
+        return { ...b, spent: b.spent + tx.amount };
+      }
+      return b;
+    }));
   };
 
   const updateBucket = (id: string, amount: number) => {
@@ -183,21 +195,43 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     showSuccess("Event updated!");
   };
 
+  const deleteGiftEvent = (id: string) => {
+    setGiftEvents(giftEvents.filter(e => e.id !== id));
+    showSuccess("Event removed from Galaxy.");
+  };
+
   const syncContacts = () => {
     showSuccess("Synced 42 contacts from your device!");
   };
 
   const addPaystub = (stub: Omit<Paystub, 'id'>) => {
+    if (paystubs.some(p => p.date === stub.date)) {
+      showError("A paystub already exists for this date.");
+      return;
+    }
     const newStub = { ...stub, id: Math.random().toString(36).substr(2, 9) };
     setPaystubs([newStub, ...paystubs]);
-    // Automatically update base income if it's the latest
-    setBaseMonthlyIncome(stub.netPay * 2); // Assuming bi-weekly
+    setBaseMonthlyIncome(stub.netPay * 2);
     showSuccess("Paystub processed and income baseline updated!");
   };
 
+  const deletePaystub = (id: string) => {
+    setPaystubs(paystubs.filter(p => p.id !== id));
+    showSuccess("Paystub record deleted.");
+  };
+
   const addSchoolPeriod = (period: Omit<SchoolPeriod, 'id'>) => {
+    if (schoolPeriods.some(p => p.startMonth === period.startMonth)) {
+      showError("A school phase already starts in this month.");
+      return;
+    }
     setSchoolPeriods([...schoolPeriods, { ...period, id: Math.random().toString(36).substr(2, 9) }]);
     showSuccess("School period recorded for forecasting.");
+  };
+
+  const deleteSchoolPeriod = (id: string) => {
+    setSchoolPeriods(schoolPeriods.filter(p => p.id !== id));
+    showSuccess("School phase removed.");
   };
 
   return (
@@ -207,8 +241,8 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       vehicles, addVehicle, updateVehicle, addVehicleExpense, updateVehicleExpense,
       courses, addCourse, updateCourse,
       accounts, addAccount,
-      giftEvents, updateGiftEvent, syncContacts,
-      paystubs, addPaystub, schoolPeriods, addSchoolPeriod,
+      giftEvents, updateGiftEvent, deleteGiftEvent, syncContacts,
+      paystubs, addPaystub, deletePaystub, schoolPeriods, addSchoolPeriod, deleteSchoolPeriod,
       baseMonthlyIncome, setBaseMonthlyIncome, fixedMonthlyBills, setFixedMonthlyBills
     }}>
       {children}
