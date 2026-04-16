@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useMemo } from 'react';
+import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import { 
   Transaction, 
   Bucket, 
@@ -39,7 +39,6 @@ interface BudgetContextType {
   addGiftEvent: (event: Omit<GiftEvent, 'id'>) => void;
   updateGiftEvent: (id: string, updates: Partial<GiftEvent>) => void;
   deleteGiftEvent: (id: string) => void;
-  syncContacts: () => void;
   paystubs: Paystub[];
   addPaystub: (stub: Omit<Paystub, 'id'>) => void;
   deletePaystub: (id: string) => void;
@@ -60,11 +59,16 @@ interface BudgetContextType {
   goals: Goal[];
   updateGoal: (id: string, updates: Partial<Goal>) => void;
   currentMonthlyIncome: number;
+  syncContacts: () => void;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
+const STORAGE_KEY = 'stellar_spend_data';
+
 export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Initial State with Persistence
+  const [isLoaded, setIsLoaded] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [buckets, setBuckets] = useState<Bucket[]>([
     { id: '1', name: 'Clothes', budgeted: 200, spent: 0, icon: 'Shirt', color: 'bg-blue-500' },
@@ -73,7 +77,6 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     { id: '4', name: 'Phone Bill', budgeted: 85, spent: 0, icon: 'Smartphone', color: 'bg-indigo-500', isRecurringBill: true },
     { id: '5', name: 'Other', budgeted: 100, spent: 0, icon: 'Package', color: 'bg-slate-500' },
   ]);
-
   const [vehicles, setVehicles] = useState<Vehicle[]>([
     {
       id: '1',
@@ -87,12 +90,10 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ]
     }
   ]);
-
   const [goals, setGoals] = useState<Goal[]>([
     { id: '1', name: 'Financial Advisor Envelope', current: 12450, target: 20000, icon: 'TrendingUp', color: 'bg-emerald-500' },
     { id: '2', name: 'Emergency Fund', current: 5000, target: 15000, icon: 'Shield', color: 'bg-blue-500' },
   ]);
-
   const [giftEvents, setGiftEvents] = useState<GiftEvent[]>([]);
   const [paystubs, setPaystubs] = useState<Paystub[]>([]);
   const [schoolPeriods, setSchoolPeriods] = useState<SchoolPeriod[]>([]);
@@ -104,6 +105,44 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     { id: '1', name: 'ATB Checking', type: 'Checking', balance: 4250.00, lastSync: 'Just now', status: 'connected' },
   ]);
   const [courses, setCourses] = useState<Course[]>([]);
+
+  // Load from LocalStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        setTransactions(data.transactions || []);
+        setBuckets(data.buckets || []);
+        setVehicles(data.vehicles || []);
+        setGoals(data.goals || []);
+        setGiftEvents(data.giftEvents || []);
+        setPaystubs(data.paystubs || []);
+        setSchoolPeriods(data.schoolPeriods || []);
+        setBaseMonthlyIncome(data.baseMonthlyIncome || 5200);
+        setFixedMonthlyBills(data.fixedMonthlyBills || 1200);
+        setSubscriptions(data.subscriptions || []);
+        setDebts(data.debts || []);
+        setAccounts(data.accounts || []);
+        setCourses(data.courses || []);
+      } catch (e) {
+        console.error("Failed to load state", e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save to LocalStorage
+  useEffect(() => {
+    if (isLoaded) {
+      const data = {
+        transactions, buckets, vehicles, goals, giftEvents, paystubs,
+        schoolPeriods, baseMonthlyIncome, fixedMonthlyBills, subscriptions,
+        debts, accounts, courses
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+  }, [isLoaded, transactions, buckets, vehicles, goals, giftEvents, paystubs, schoolPeriods, baseMonthlyIncome, fixedMonthlyBills, subscriptions, debts, accounts, courses]);
 
   const currentMonthlyIncome = useMemo(() => {
     const now = new Date();
@@ -174,7 +213,6 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const addPaystub = (stub: Omit<Paystub, 'id'>) => {
-    if (paystubs.some(p => p.date === stub.date)) return showError("Duplicate date!");
     setPaystubs([{ ...stub, id: Math.random().toString(36).substr(2, 9) }, ...paystubs]);
     setBaseMonthlyIncome(stub.netPay * 2);
     showSuccess("Paystub added!");
@@ -183,7 +221,6 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const deletePaystub = (id: string) => setPaystubs(paystubs.filter(p => p.id !== id));
 
   const addSchoolPeriod = (period: Omit<SchoolPeriod, 'id'>) => {
-    if (schoolPeriods.some(p => p.startMonth === period.startMonth)) return showError("Duplicate start month!");
     setSchoolPeriods([...schoolPeriods, { ...period, id: Math.random().toString(36).substr(2, 9) }]);
     showSuccess("School period added!");
   };

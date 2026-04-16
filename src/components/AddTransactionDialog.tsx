@@ -30,7 +30,7 @@ interface AddTransactionDialogProps {
 
 const AddTransactionDialog = ({ trigger }: AddTransactionDialogProps) => {
   const [open, setOpen] = React.useState(false);
-  const { addTransaction } = useBudget();
+  const { addTransaction, buckets } = useBudget();
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -80,16 +80,15 @@ const AddTransactionDialog = ({ trigger }: AddTransactionDialogProps) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select name="category" defaultValue="Eating Out">
+              <Select name="category" defaultValue={buckets[0]?.name || "Other"}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Eating Out">Eating Out</SelectItem>
-                  <SelectItem value="Vehicles">Vehicles</SelectItem>
-                  <SelectItem value="Academy">Academy</SelectItem>
-                  <SelectItem value="Subscriptions">Subscriptions</SelectItem>
-                  <SelectItem value="Tithing">Tithing</SelectItem>
+                  {buckets.map(b => (
+                    <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                  ))}
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

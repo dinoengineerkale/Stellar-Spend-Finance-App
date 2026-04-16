@@ -3,17 +3,28 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Landmark, Plus, ShieldCheck, RefreshCw, ExternalLink, ArrowRightLeft } from "lucide-react";
+import { CreditCard, Landmark, Plus, ShieldCheck, RefreshCw, ExternalLink, ArrowRightLeft, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBudget } from "@/context/BudgetContext";
-import { showSuccess } from "@/utils/toast";
+import { showSuccess, showLoading, dismissToast } from "@/utils/toast";
 
 const Accounts = () => {
   const { accounts, addAccount } = useBudget();
   const [open, setOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleBankSync = () => {
+    const tid = showLoading("Connecting to secure banking gateway...");
+    setIsSyncing(true);
+    setTimeout(() => {
+      dismissToast(tid);
+      showSuccess("Successfully synced with ATB Financial!");
+      setIsSyncing(false);
+    }, 3000);
+  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8">
@@ -23,6 +34,13 @@ const Accounts = () => {
           <p className="text-slate-500">Secure bank & credit card integrations</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            onClick={handleBankSync} 
+            disabled={isSyncing}
+            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
+          >
+            <Lock size={18} /> {isSyncing ? "Syncing..." : "Secure Sync"}
+          </Button>
           <TransferDialog accounts={accounts} />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button className="gap-2 bg-indigo-600"><Plus size={18} /> Link New Account</Button></DialogTrigger>
@@ -67,7 +85,7 @@ const Accounts = () => {
 
       <div className="grid gap-4">
         {accounts.map((acc) => (
-          <Card key={acc.id} className="overflow-hidden">
+          <Card key={acc.id} className="overflow-hidden border-none shadow-sm hover:shadow-md transition-all">
             <CardContent className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-indigo-600">

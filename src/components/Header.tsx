@@ -1,13 +1,19 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from "react-router-dom";
-import { Rocket, Settings as SettingsIcon, Target } from "lucide-react";
+import { Rocket, Settings as SettingsIcon, Target, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const Header = () => {
   const location = useLocation();
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const navItems = [
     { label: 'Budget', path: '/budgeting' },
@@ -24,12 +30,19 @@ const Header = () => {
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="bg-indigo-600 p-2 rounded-xl text-white group-hover:scale-110 transition-transform">
-            <Rocket size={24} />
+        <div className="flex items-center gap-6">
+          <Link to="/" className="flex items-center gap-2 group">
+            <div className="bg-indigo-600 p-2 rounded-xl text-white group-hover:scale-110 transition-transform">
+              <Rocket size={24} />
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Stellar Spend</h1>
+          </Link>
+          
+          <div className="hidden lg:flex items-center gap-2 text-slate-400 text-xs font-bold uppercase tracking-widest border-l pl-6 border-slate-200 dark:border-slate-800">
+            <Clock size={14} />
+            <span>{time.toLocaleDateString()} • {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Stellar Spend</h1>
-        </Link>
+        </div>
         
         <nav className="hidden xl:flex items-center gap-1 text-sm font-medium">
           {navItems.map((item) => (
