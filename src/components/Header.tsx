@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Link, useLocation } from "react-router-dom";
-import { Rocket, Settings as SettingsIcon } from "lucide-react";
+import { Rocket, Settings as SettingsIcon, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -10,11 +10,15 @@ const Header = () => {
   const location = useLocation();
 
   const navItems = [
-    { label: 'Dashboard', path: '/' },
-    { label: 'Budgeting', path: '/budgeting' },
+    { label: 'Budget', path: '/budgeting' },
     { label: 'Ledger', path: '/transactions' },
     { label: 'Reports', path: '/reports' },
     { label: 'Accounts', path: '/accounts' },
+    { label: 'Debt', path: '/debt-destroyer' },
+    { label: 'Vehicles', path: '/vehicles' },
+    { label: 'Academy', path: '/academy' },
+    { label: 'Subs', path: '/subscriptions' },
+    { label: 'Gifts', path: '/gift-galaxy' },
   ];
 
   return (
@@ -27,13 +31,13 @@ const Header = () => {
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Stellar Spend</h1>
         </Link>
         
-        <nav className="hidden md:flex items-center gap-1 text-sm font-medium">
+        <nav className="hidden xl:flex items-center gap-1 text-sm font-medium">
           {navItems.map((item) => (
             <Link 
               key={item.path} 
               to={item.path}
               className={cn(
-                "px-4 py-2 rounded-lg transition-colors",
+                "px-3 py-2 rounded-lg transition-colors",
                 location.pathname === item.path 
                   ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30" 
                   : "text-slate-500 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
@@ -45,6 +49,11 @@ const Header = () => {
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link to="/goals">
+            <Button variant="ghost" size="icon" className="rounded-full text-indigo-600">
+              <Target size={20} />
+            </Button>
+          </Link>
           <Link to="/settings">
             <Button variant="ghost" size="icon" className="rounded-full">
               <SettingsIcon size={20} />

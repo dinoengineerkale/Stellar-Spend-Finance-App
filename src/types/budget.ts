@@ -14,11 +14,11 @@ export interface Bucket {
   spent: number;
   icon: string;
   color: string;
+  isRecurringBill?: boolean;
 }
 
-export interface VehicleExpense {
+export interface VehicleExpenseItem {
   id: string;
-  type: string;
   label: string;
   value: number;
   date: string;
@@ -34,7 +34,7 @@ export interface Vehicle {
     totalKm: number;
     purchaseDate: string;
   };
-  expenses: VehicleExpense[];
+  expenseHistory: VehicleExpenseItem[];
 }
 
 export interface Course {
@@ -68,6 +68,7 @@ export interface GiftEvent {
   saved: number;
   description?: string;
   isBought?: boolean;
+  isYearly?: boolean;
 }
 
 export interface Paystub {
@@ -102,4 +103,13 @@ export interface Debt {
   limit: number;
   apr: number;
   minPayment: number;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  current: number;
+  target: number;
+  icon: string;
+  color: string;
 }

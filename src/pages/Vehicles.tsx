@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Car, Fuel, ShieldAlert, Ticket, ParkingCircle, Wrench, Plus, Edit2, Check, Camera, Gauge } from "lucide-react";
+import { Car, Fuel, ShieldAlert, Ticket, ParkingCircle, Wrench, Plus, Edit2, Check, Camera, Gauge, Trash2, History, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -12,16 +12,39 @@ import { cn } from "@/lib/utils";
 import { showSuccess, showLoading, dismissToast } from "@/utils/toast";
 
 const Vehicles = () => {
-  const { vehicles, addVehicle, updateVehicle, addVehicleExpense, updateVehicleExpense } = useBudget();
+  const { vehicles, addVehicle, updateVehicle, deleteVehicle, addVehicleExpense } = useBudget();
   const [activeId, setActiveId] = useState(vehicles[0]?.id || '');
   const [isEditingName, setIsEditingName] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   const activeVehicle = vehicles.find(v => v.id === activeId) || vehicles[0];
 
-  if (!activeVehicle) return null;
+  const consolidatedExpenses = useMemo(() => {
+    if (!activeVehicle) return [];
+    const groups: Record<string, number> = {
+      'Fuel / Gas': 0,
+      'Maintenance': 0,
+      'Insurance': 0,
+      'Parking': 0,
+      'Tickets': 0
+    };
+    activeVehicle.expenseHistory.forEach(e => {
+      if (groups[e.label] !== undefined) groups[e.label] += e.value;
+      else groups['Other'] = (groups['Other'] || 0) + e.value;
+    });
+    return Object.entries(groups).map(([label, value]) => ({ label, value }));
+  }, [activeVehicle]);
 
-  const totalCost = activeVehicle.expenses.reduce((acc, e) => acc + e.value, 0) + activeVehicle.stats.purchasePrice;
+  if (!activeVehicle) return (
+    <div className="flex flex-col items-center justify-center h-[calc(100vh-64px)] space-y-4">
+      <Car size={64} className="text-slate-300" />
+      <h2 className="text-xl font-bold">No vehicles in your fleet</h2>
+      <AddVehicleDialog onAdd={addVehicle} trigger={<Button className="bg-indigo-600">Add Your First Vehicle</Button>} />
+    </div>
+  );
+
+  const totalCost = activeVehicle.expenseHistory.reduce((acc, e) => acc + e.value, 0) + activeVehicle.stats.purchasePrice;
   const daysOwned = Math.max(1, Math.floor((new Date().getTime() - new Date(activeVehicle.stats.purchaseDate).getTime()) / (1000 * 3600 * 24)));
   const costPerKm = totalCost / activeVehicle.stats.totalKm;
   const costPerDay = totalCost / daysOwned;
@@ -32,7 +55,6 @@ const Vehicles = () => {
     setTimeout(() => {
       dismissToast(tid);
       addVehicleExpense(activeId, {
-        type: 'gas',
         label: 'Fuel / Gas',
         value: 64.20,
         date: new Date().toISOString()
@@ -40,6 +62,12 @@ const Vehicles = () => {
       showSuccess("Receipt scanned! Added $64.20 to Fuel.");
       setIsScanning(false);
     }, 2000);
+  };
+
+  const handleGenerateImage = () => {
+    const randomId = Math.floor(Math.random() * 1000);
+    updateVehicle(activeId, { image: `https://images.unsplash.com/photo-${randomId}?auto=format&fit=crop&q=80&w=1000` });
+    showSuccess("New asset visual generated!");
   };
 
   return (
@@ -96,12 +124,19 @@ const Vehicles = () => {
                   <Button variant="ghost" size="icon" onClick={() => setIsEditingName(true)}>
                     <Edit2 size={16} />
                   </Button>
+                  <EditVehicleDialog vehicle={activeVehicle} onSave={(updates) => updateVehicle(activeId, updates)} />
+                  <Button variant="ghost" size="icon" className="text-red-400 hover:text-red-600" onClick={() => deleteVehicle(activeId)}>
+                    <Trash2 size={16} />
+                  </Button>
                 </>
               )}
             </div>
             <p className="text-slate-500">{activeVehicle.model} • Lifetime ownership analysis</p>
           </div>
           <div className="flex gap-2">
+            <Button onClick={handleGenerateImage} variant="outline" className="gap-2">
+              <RefreshCw size={18} /> New Image
+            </Button>
             <Button onClick={handleScanReceipt} disabled={isScanning} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
               <Camera size={18} /> {isScanning ? "Scanning..." : "Scan Receipt"}
             </Button>
@@ -135,18 +170,39 @@ const Vehicles = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <Card className="shadow-lg border-none">
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Wrench size={20} className="text-indigo-600" /> Expense Breakdown</CardTitle></CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg flex items-center gap-2"><Wrench size={20} className="text-indigo-600" /> Expense Breakdown</CardTitle>
+              <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowHistory(!showHistory)}>
+                <History size={16} /> {showHistory ? "Show Summary" : "Show History"}
+              </Button>
+            </CardHeader>
             <CardContent className="space-y-3">
-              {activeVehicle.expenses.map(exp => (
-                <BreakdownItem 
-                  key={exp.id} 
-                  icon={getIcon(exp.type)} 
-                  label={exp.label} 
-                  value={exp.value} 
-                  color={getColor(exp.type)}
-                  onEdit={(val) => updateVehicleExpense(activeId, exp.id, val)}
-                />
-              ))}
+              {showHistory ? (
+                <div className="space-y-2">
+                  {activeVehicle.expenseHistory.map(exp => (
+                    <div key={exp.id} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <Calendar size={14} className="text-slate-400" />
+                        <div>
+                          <div className="font-medium text-sm">{exp.label}</div>
+                          <div className="text-[10px] text-slate-500">{new Date(exp.date).toLocaleDateString()}</div>
+                        </div>
+                      </div>
+                      <div className="font-bold">${exp.value.toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                consolidatedExpenses.map(exp => (
+                  <BreakdownItem 
+                    key={exp.label} 
+                    icon={getIcon(exp.label)} 
+                    label={exp.label} 
+                    value={exp.value} 
+                    color={getColor(exp.label)}
+                  />
+                ))
+              )}
             </CardContent>
           </Card>
 
@@ -164,62 +220,64 @@ const Vehicles = () => {
   );
 };
 
-const getIcon = (type: string) => {
-  switch(type) {
-    case 'gas': return Fuel;
-    case 'maintenance': return Wrench;
-    case 'insurance': return ShieldAlert;
-    case 'parking': return ParkingCircle;
-    default: return Ticket;
-  }
+const getIcon = (label: string) => {
+  if (label.includes('Fuel')) return Fuel;
+  if (label.includes('Maintenance')) return Wrench;
+  if (label.includes('Insurance')) return ShieldAlert;
+  if (label.includes('Parking')) return ParkingCircle;
+  return Ticket;
 };
 
-const getColor = (type: string) => {
-  switch(type) {
-    case 'gas': return 'text-orange-500';
-    case 'maintenance': return 'text-indigo-500';
-    case 'insurance': return 'text-blue-500';
-    case 'parking': return 'text-emerald-500';
-    default: return 'text-red-500';
-  }
+const getColor = (label: string) => {
+  if (label.includes('Fuel')) return 'text-orange-500';
+  if (label.includes('Maintenance')) return 'text-indigo-500';
+  if (label.includes('Insurance')) return 'text-blue-500';
+  if (label.includes('Parking')) return 'text-emerald-500';
+  return 'text-red-500';
 };
 
-const BreakdownItem = ({ icon: Icon, label, value, color, onEdit }: any) => {
-  const [isEditing, setIsEditing] = useState(false);
-  return (
-    <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
-      <div className="flex items-center gap-3">
-        <div className={cn("p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm", color)}><Icon size={18} /></div>
-        <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {isEditing ? (
-          <Input 
-            type="number" 
-            defaultValue={value} 
-            onBlur={(e) => {
-              onEdit(parseFloat(e.target.value));
-              setIsEditing(false);
-            }}
-            className="w-24 h-8 text-right font-bold"
-            autoFocus
-          />
-        ) : (
-          <>
-            <span className="font-bold text-slate-900 dark:text-white">${value.toLocaleString()}</span>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsEditing(true)}><Edit2 size={12} /></Button>
-          </>
-        )}
-      </div>
+const BreakdownItem = ({ icon: Icon, label, value, color }: any) => (
+  <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl border border-slate-100 dark:border-slate-800">
+    <div className="flex items-center gap-3">
+      <div className={cn("p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm", color)}><Icon size={18} /></div>
+      <span className="font-medium text-slate-700 dark:text-slate-300">{label}</span>
     </div>
-  );
-};
+    <span className="font-bold text-slate-900 dark:text-white">${value.toLocaleString()}</span>
+  </div>
+);
 
-const AddVehicleDialog = ({ onAdd }: any) => {
+const EditVehicleDialog = ({ vehicle, onSave }: any) => {
   const [open, setOpen] = useState(false);
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Plus size={18} /></Button></DialogTrigger>
+      <DialogTrigger asChild><Button variant="ghost" size="icon"><Edit2 size={16} /></Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit Vehicle Details</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onSave({
+            name: e.target.name.value,
+            model: e.target.model.value,
+            stats: { ...vehicle.stats, purchasePrice: parseFloat(e.target.price.value) }
+          });
+          setOpen(false);
+          showSuccess("Vehicle updated!");
+        }} className="space-y-4">
+          <div className="space-y-2"><Label>Nickname</Label><Input name="name" defaultValue={vehicle.name} required /></div>
+          <div className="space-y-2"><Label>Model</Label><Input name="model" defaultValue={vehicle.model} required /></div>
+          <div className="space-y-2"><Label>Purchase Price</Label><Input name="price" type="number" defaultValue={vehicle.stats.purchasePrice} required /></div>
+          <Button type="submit" className="w-full bg-indigo-600">Save Changes</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const AddVehicleDialog = ({ onAdd, trigger }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{trigger || <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Plus size={18} /></Button>}</DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Add New Vehicle</DialogTitle></DialogHeader>
         <form onSubmit={(e: any) => {
@@ -252,7 +310,6 @@ const AddExpenseDialog = ({ onAdd }: any) => {
         <form onSubmit={(e: any) => {
           e.preventDefault();
           onAdd({
-            type: e.target.type.value,
             label: e.target.type.options[e.target.type.selectedIndex].text,
             value: parseFloat(e.target.amount.value),
             date: new Date().toISOString()

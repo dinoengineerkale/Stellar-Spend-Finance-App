@@ -16,6 +16,7 @@ import Reports from "./pages/Reports";
 import DebtDestroyer from "./pages/DebtDestroyer";
 import Budgeting from "./pages/Budgeting";
 import Settings from "./pages/Settings";
+import Goals from "./pages/Goals";
 import NotFound from "./pages/NotFound";
 import MobileNav from "./components/MobileNav";
 import Header from "./components/Header";
@@ -33,16 +34,17 @@ const App = () => (
             <Header />
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/budgeting" element={<Budgeting />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/debt-destroyer" element={<DebtDestroyer />} />
               <Route path="/vehicles" element={<Vehicles />} />
               <Route path="/academy" element={<Academy />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
               <Route path="/gift-galaxy" element={<GiftGalaxy />} />
+              <Route path="/goals" element={<Goals />} />
               <Route path="/forecasting" element={<Forecasting />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="/accounts" element={<Accounts />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/debt-destroyer" element={<DebtDestroyer />} />
-              <Route path="/budgeting" element={<Budgeting />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

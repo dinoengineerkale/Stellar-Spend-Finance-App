@@ -3,16 +3,17 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, UserPlus, Search, Edit2, Trash2, CheckCircle2, Circle } from "lucide-react";
+import { Heart, UserPlus, Search, Edit2, Trash2, CheckCircle2, RefreshCw, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useBudget } from "@/context/BudgetContext";
 import { cn } from "@/lib/utils";
 
 const GiftGalaxy = () => {
-  const { giftEvents, updateGiftEvent, deleteGiftEvent, syncContacts } = useBudget();
+  const { giftEvents, updateGiftEvent, deleteGiftEvent, addGiftEvent, syncContacts } = useBudget();
   const [search, setSearch] = useState("");
 
   const filteredEvents = giftEvents.filter(e => e.person.toLowerCase().includes(search.toLowerCase()));
@@ -24,7 +25,10 @@ const GiftGalaxy = () => {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gift Galaxy</h1>
           <p className="text-slate-500">Social circle event budgeting</p>
         </div>
-        <Button onClick={syncContacts} className="gap-2 bg-pink-600 hover:bg-pink-700"><UserPlus size={18} /> Sync Contacts</Button>
+        <div className="flex gap-2">
+          <Button onClick={syncContacts} variant="outline" className="gap-2"><UserPlus size={18} /> Sync</Button>
+          <NewGiftDialog onAdd={addGiftEvent} />
+        </div>
       </div>
 
       <div className="relative">
@@ -58,6 +62,7 @@ const GiftGalaxy = () => {
                         event.isBought && "line-through text-slate-400"
                       )}>
                         {event.person}
+                        {event.isYearly && <RefreshCw size={14} className="text-slate-400" />}
                         <div className="flex gap-1">
                           <EditEventDialog event={event} onSave={(updates) => updateGiftEvent(event.id, updates)} />
                           <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-red-500" onClick={() => deleteGiftEvent(event.id)}>
@@ -104,6 +109,49 @@ const GiftGalaxy = () => {
   );
 };
 
+const NewGiftDialog = ({ onAdd }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button className="gap-2 bg-pink-600"><Plus size={18} /> New Event</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Add Gift Event</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onAdd({
+            person: e.target.person.value,
+            relationship: e.target.relationship.value,
+            budget: parseFloat(e.target.budget.value),
+            saved: 0,
+            date: e.target.date.value,
+            type: e.target.type.value,
+            description: e.target.description.value,
+            isYearly: e.target.yearly.checked,
+            isBought: false
+          });
+          setOpen(false);
+        }} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Person</Label><Input name="person" required /></div>
+            <div className="space-y-2"><Label>Relationship</Label><Input name="relationship" required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Event Type</Label><Input name="type" placeholder="Birthday, Wedding..." required /></div>
+            <div className="space-y-2"><Label>Budget Goal ($)</Label><Input name="budget" type="number" required /></div>
+          </div>
+          <div className="space-y-2"><Label>Event Date</Label><Input name="date" type="date" required /></div>
+          <div className="space-y-2"><Label>Gift Idea</Label><Textarea name="description" /></div>
+          <div className="flex items-center justify-between">
+            <Label>Yearly Recurring</Label>
+            <Switch name="yearly" />
+          </div>
+          <Button type="submit" className="w-full bg-pink-600">Add to Galaxy</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const EditEventDialog = ({ event, onSave }: any) => {
   const [open, setOpen] = useState(false);
   return (
@@ -119,7 +167,8 @@ const EditEventDialog = ({ event, onSave }: any) => {
             budget: parseFloat(e.target.budget.value),
             saved: parseFloat(e.target.saved.value),
             date: e.target.date.value,
-            description: e.target.description.value
+            description: e.target.description.value,
+            isYearly: e.target.yearly.checked
           });
           setOpen(false);
         }} className="space-y-4">
@@ -132,7 +181,11 @@ const EditEventDialog = ({ event, onSave }: any) => {
             <div className="space-y-2"><Label>Amount Saved ($)</Label><Input name="saved" type="number" defaultValue={event.saved} required /></div>
           </div>
           <div className="space-y-2"><Label>Event Date</Label><Input name="date" type="date" defaultValue={event.date} required /></div>
-          <div className="space-y-2"><Label>Gift Description / Idea</Label><Textarea name="description" defaultValue={event.description} placeholder="e.g. New gardening tools, blue sweater..." /></div>
+          <div className="space-y-2"><Label>Gift Idea</Label><Textarea name="description" defaultValue={event.description} /></div>
+          <div className="flex items-center justify-between">
+            <Label>Yearly Recurring</Label>
+            <Switch name="yearly" defaultChecked={event.isYearly} />
+          </div>
           <Button type="submit" className="w-full bg-pink-600">Update Event</Button>
         </form>
       </DialogContent>

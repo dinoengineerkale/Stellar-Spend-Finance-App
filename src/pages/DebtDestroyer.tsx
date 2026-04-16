@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Flame, TrendingDown, TrendingUp, AlertTriangle, ArrowRight, CreditCard, Plus } from "lucide-react";
+import { Flame, TrendingDown, TrendingUp, AlertTriangle, ArrowRight, CreditCard, Plus, Edit2, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useBudget } from "@/context/BudgetContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const DebtDestroyer = () => {
-  const { debts, addDebt, updateDebt } = useBudget();
+  const { debts, addDebt, updateDebt, deleteDebt } = useBudget();
   const [open, setOpen] = useState(false);
 
   const totalDebt = debts.reduce((acc, d) => acc + d.balance, 0);
@@ -107,12 +107,18 @@ const DebtDestroyer = () => {
                         <CreditCard size={24} />
                       </div>
                       <div>
-                        <div className="font-bold text-lg">{debt.name}</div>
+                        <div className="font-bold text-lg flex items-center gap-2">
+                          {debt.name}
+                          <EditDebtDialog debt={debt} onSave={(updates) => updateDebt(debt.id, updates)} />
+                          <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-300 hover:text-red-500" onClick={() => deleteDebt(debt.id)}>
+                            <Trash2 size={12} />
+                          </Button>
+                        </div>
                         <div className="text-xs text-slate-500">{debt.apr}% APR • Min. Payment: ${debt.minPayment}</div>
                       </div>
                     </div>
                     
-                    <div className="flex-1 max-w-md space-y-2">
+                    <div className="flex-1 max-md:w-full space-y-2">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-slate-500 uppercase">Utilization</span>
                         <span>{Math.round(utilization)}%</span>
@@ -136,6 +142,40 @@ const DebtDestroyer = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const EditDebtDialog = ({ debt, onSave }: any) => {
+  const [open, setOpen] = useState(false);
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400"><Edit2 size={12} /></Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Edit Debt Account</DialogTitle></DialogHeader>
+        <form onSubmit={(e: any) => {
+          e.preventDefault();
+          onSave({
+            name: e.target.name.value,
+            balance: parseFloat(e.target.balance.value),
+            limit: parseFloat(e.target.limit.value),
+            apr: parseFloat(e.target.apr.value),
+            minPayment: parseFloat(e.target.min.value)
+          });
+          setOpen(false);
+        }} className="space-y-4">
+          <div className="space-y-2"><Label>Account Name</Label><Input name="name" defaultValue={debt.name} required /></div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>Balance ($)</Label><Input name="balance" type="number" step="0.01" defaultValue={debt.balance} required /></div>
+            <div className="space-y-2"><Label>Limit ($)</Label><Input name="limit" type="number" step="0.01" defaultValue={debt.limit} required /></div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2"><Label>APR (%)</Label><Input name="apr" type="number" step="0.01" defaultValue={debt.apr} required /></div>
+            <div className="space-y-2"><Label>Min Payment ($)</Label><Input name="min" type="number" step="0.01" defaultValue={debt.minPayment} required /></div>
+          </div>
+          <Button type="submit" className="w-full bg-indigo-600">Save Changes</Button>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 };
 
