@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { useBudget } from "@/context/BudgetContext";
 import { cn } from "@/lib/utils";
-import { showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import { showSuccess, showLoading, dismissToast, showError } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Vehicles = () => {
   const { vehicles, addVehicle, updateVehicle, deleteVehicle, addVehicleExpense } = useBudget();
@@ -49,19 +50,31 @@ const Vehicles = () => {
   const costPerKm = totalCost / activeVehicle.stats.totalKm;
   const costPerDay = totalCost / daysOwned;
 
-  const handleScanReceipt = () => {
+  const handleScanReceipt = async () => {
     const tid = showLoading("Scanning receipt with Stellar OCR...");
     setIsScanning(true);
-    setTimeout(() => {
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('financial-processor', {
+        body: { action: 'scan-receipt' }
+      });
+
+      if (error) throw error;
+
       dismissToast(tid);
       addVehicleExpense(activeId, {
-        label: 'Fuel / Gas',
-        value: 64.20,
-        date: new Date().toISOString()
+        label: data.data.category,
+        value: data.data.amount,
+        date: data.data.date
       });
-      showSuccess("Receipt scanned! Added $64.20 to Fuel.");
+      showSuccess(`Receipt scanned! Added $${data.data.amount} to ${data.data.category}.`);
+    } catch (err) {
+      dismissToast(tid);
+      showError("Failed to scan receipt.");
+      console.error(err);
+    } finally {
       setIsScanning(false);
-    }, 2000);
+    }
   };
 
   const handleGenerateImage = () => {
