@@ -16,6 +16,7 @@ import {
   Goal
 } from "@/types/budget";
 import { showSuccess, showError } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BudgetContextType {
   transactions: Transaction[];
@@ -60,40 +61,17 @@ interface BudgetContextType {
   updateGoal: (id: string, updates: Partial<Goal>) => void;
   currentMonthlyIncome: number;
   syncContacts: () => void;
+  isLoading: boolean;
 }
 
 const BudgetContext = createContext<BudgetContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'stellar_spend_data';
-
 export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Initial State with Persistence
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [buckets, setBuckets] = useState<Bucket[]>([
-    { id: '1', name: 'Clothes', budgeted: 200, spent: 0, icon: 'Shirt', color: 'bg-blue-500' },
-    { id: '2', name: 'Eating Out', budgeted: 400, spent: 0, icon: 'Utensils', color: 'bg-orange-500' },
-    { id: '3', name: 'Tithing', budgeted: 500, spent: 0, icon: 'Heart', color: 'bg-red-500', isRecurringBill: true },
-    { id: '4', name: 'Phone Bill', budgeted: 85, spent: 0, icon: 'Smartphone', color: 'bg-indigo-500', isRecurringBill: true },
-    { id: '5', name: 'Other', budgeted: 100, spent: 0, icon: 'Package', color: 'bg-slate-500' },
-  ]);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: '1',
-      name: 'Daily Driver',
-      model: 'Tesla Model 3',
-      image: 'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=1000',
-      stats: { purchasePrice: 45000, totalKm: 12000, purchaseDate: '2023-05-15' },
-      expenseHistory: [
-        { id: 'e1', label: 'Insurance', value: 2400, date: '2024-01-01' },
-        { id: 'e2', label: 'Maintenance', value: 150, date: '2024-02-10' },
-      ]
-    }
-  ]);
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: '1', name: 'Financial Advisor Envelope', current: 12450, target: 20000, icon: 'TrendingUp', color: 'bg-emerald-500' },
-    { id: '2', name: 'Emergency Fund', current: 5000, target: 15000, icon: 'Shield', color: 'bg-blue-500' },
-  ]);
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [giftEvents, setGiftEvents] = useState<GiftEvent[]>([]);
   const [paystubs, setPaystubs] = useState<Paystub[]>([]);
   const [schoolPeriods, setSchoolPeriods] = useState<SchoolPeriod[]>([]);
@@ -101,48 +79,81 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [fixedMonthlyBills, setFixedMonthlyBills] = useState(1200);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([
-    { id: '1', name: 'ATB Checking', type: 'Checking', balance: 4250.00, lastSync: 'Just now', status: 'connected' },
-  ]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
 
-  // Load from LocalStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const data = JSON.parse(saved);
-        setTransactions(data.transactions || []);
-        setBuckets(data.buckets || []);
-        setVehicles(data.vehicles || []);
-        setGoals(data.goals || []);
-        setGiftEvents(data.giftEvents || []);
-        setPaystubs(data.paystubs || []);
-        setSchoolPeriods(data.schoolPeriods || []);
-        setBaseMonthlyIncome(data.baseMonthlyIncome || 5200);
-        setFixedMonthlyBills(data.fixedMonthlyBills || 1200);
-        setSubscriptions(data.subscriptions || []);
-        setDebts(data.debts || []);
-        setAccounts(data.accounts || []);
-        setCourses(data.courses || []);
-      } catch (e) {
-        console.error("Failed to load state", e);
-      }
+  const fetchData = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsLoading(false);
+      return;
     }
-    setIsLoaded(true);
-  }, []);
 
-  // Save to LocalStorage
-  useEffect(() => {
-    if (isLoaded) {
-      const data = {
-        transactions, buckets, vehicles, goals, giftEvents, paystubs,
-        schoolPeriods, baseMonthlyIncome, fixedMonthlyBills, subscriptions,
-        debts, accounts, courses
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+      const [
+        { data: txData },
+        { data: bucketData },
+        { data: vehicleData },
+        { data: goalData },
+        { data: giftData },
+        { data: stubData },
+        { data: periodData },
+        { data: subData },
+        { data: debtData },
+        { data: accData },
+        { data: courseData }
+      ] = await Promise.all([
+        supabase.from('transactions').select('*').order('date', { ascending: false }),
+        supabase.from('buckets').select('*'),
+        supabase.from('vehicles').select('*, expenseHistory:vehicle_expenses(*)'),
+        supabase.from('goals').select('*'),
+        supabase.from('gift_events').select('*'),
+        supabase.from('paystubs').select('*'),
+        supabase.from('school_periods').select('*'),
+        supabase.from('subscriptions').select('*'),
+        supabase.from('debts').select('*'),
+        supabase.from('accounts').select('*'),
+        supabase.from('courses').select('*')
+      ]);
+
+      setTransactions(txData || []);
+      setBuckets(bucketData || []);
+      setVehicles(vehicleData || []);
+      setGoals(goalData || []);
+      setGiftEvents(giftData || []);
+      setPaystubs(stubData || []);
+      setSchoolPeriods(periodData || []);
+      setSubscriptions(subData || []);
+      setDebts(debtData || []);
+      setAccounts(accData || []);
+      setCourses(courseData || []);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [isLoaded, transactions, buckets, vehicles, goals, giftEvents, paystubs, schoolPeriods, baseMonthlyIncome, fixedMonthlyBills, subscriptions, debts, accounts, courses]);
+  };
+
+  useEffect(() => {
+    fetchData();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') fetchData();
+      if (event === 'SIGNED_OUT') {
+        setTransactions([]);
+        setBuckets([]);
+        setVehicles([]);
+        setGoals([]);
+        setGiftEvents([]);
+        setPaystubs([]);
+        setSchoolPeriods([]);
+        setSubscriptions([]);
+        setDebts([]);
+        setAccounts([]);
+        setCourses([]);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const currentMonthlyIncome = useMemo(() => {
     const now = new Date();
@@ -151,113 +162,286 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return activePeriod ? baseMonthlyIncome * activePeriod.incomeMultiplier : baseMonthlyIncome;
   }, [baseMonthlyIncome, schoolPeriods]);
 
-  const addTransaction = (tx: Omit<Transaction, 'id' | 'status'>) => {
-    const newTx: Transaction = { ...tx, id: Math.random().toString(36).substr(2, 9), status: 'completed' };
-    setTransactions([newTx, ...transactions]);
-    setBuckets(prev => prev.map(b => b.name.toLowerCase() === tx.category.toLowerCase() ? { ...b, spent: b.spent + tx.amount } : b));
+  const addTransaction = async (tx: Omit<Transaction, 'id' | 'status'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('transactions').insert([{ ...tx, user_id: user.id }]).select();
+    if (error) {
+      showError("Failed to record transaction.");
+      return;
+    }
+    setTransactions([data[0], ...transactions]);
+    
+    // Update bucket spent amount locally and in DB
+    const bucket = buckets.find(b => b.name.toLowerCase() === tx.category.toLowerCase());
+    if (bucket) {
+      const newSpent = bucket.spent + tx.amount;
+      await supabase.from('buckets').update({ spent: newSpent }).eq('id', bucket.id);
+      setBuckets(prev => prev.map(b => b.id === bucket.id ? { ...b, spent: newSpent } : b));
+    }
   };
 
-  const addBucket = (b: Omit<Bucket, 'id' | 'spent'>) => {
-    setBuckets([...buckets, { ...b, id: Math.random().toString(36).substr(2, 9), spent: 0 }]);
+  const addBucket = async (b: Omit<Bucket, 'id' | 'spent'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('buckets').insert([{ ...b, user_id: user.id, spent: 0 }]).select();
+    if (error) {
+      showError("Failed to create bucket.");
+      return;
+    }
+    setBuckets([...buckets, data[0]]);
     showSuccess(`${b.name} bucket created!`);
   };
 
-  const updateBucket = (id: string, amount: number) => {
-    setBuckets(buckets.map(b => b.id === id ? { ...b, budgeted: Math.max(0, b.budgeted + amount) } : b));
+  const updateBucket = async (id: string, amount: number) => {
+    const bucket = buckets.find(b => b.id === id);
+    if (!bucket) return;
+    const newBudgeted = Math.max(0, bucket.budgeted + amount);
+    const { error } = await supabase.from('buckets').update({ budgeted: newBudgeted }).eq('id', id);
+    if (error) return;
+    setBuckets(buckets.map(b => b.id === id ? { ...b, budgeted: newBudgeted } : b));
   };
 
-  const deleteBucket = (id: string) => {
+  const deleteBucket = async (id: string) => {
+    const { error } = await supabase.from('buckets').delete().eq('id', id);
+    if (error) return;
     setBuckets(buckets.filter(b => b.id !== id));
     showSuccess("Bucket removed.");
   };
 
   const saveBuckets = () => showSuccess("Budget allocations saved!");
 
-  const addVehicle = (v: Omit<Vehicle, 'id' | 'expenseHistory'>) => {
-    setVehicles([...vehicles, { ...v, id: Math.random().toString(36).substr(2, 9), expenseHistory: [] }]);
+  const addVehicle = async (v: Omit<Vehicle, 'id' | 'expenseHistory'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('vehicles').insert([{
+      user_id: user.id,
+      name: v.name,
+      model: v.model,
+      image: v.image,
+      purchase_price: v.stats.purchasePrice,
+      total_km: v.stats.totalKm,
+      purchase_date: v.stats.purchaseDate
+    }]).select();
+
+    if (error) return;
+    setVehicles([...vehicles, { ...data[0], expenseHistory: [], stats: { purchasePrice: data[0].purchase_price, totalKm: data[0].total_km, purchaseDate: data[0].purchase_date } }]);
     showSuccess(`${v.name} added to fleet!`);
   };
 
-  const updateVehicle = (id: string, updates: Partial<Vehicle>) => {
+  const updateVehicle = async (id: string, updates: Partial<Vehicle>) => {
+    const dbUpdates: any = {};
+    if (updates.name) dbUpdates.name = updates.name;
+    if (updates.model) dbUpdates.model = updates.model;
+    if (updates.image) dbUpdates.image = updates.image;
+    if (updates.stats) {
+      if (updates.stats.purchasePrice) dbUpdates.purchase_price = updates.stats.purchasePrice;
+      if (updates.stats.totalKm !== undefined) dbUpdates.total_km = updates.stats.totalKm;
+      if (updates.stats.purchaseDate) dbUpdates.purchase_date = updates.stats.purchaseDate;
+    }
+
+    const { error } = await supabase.from('vehicles').update(dbUpdates).eq('id', id);
+    if (error) return;
     setVehicles(vehicles.map(v => v.id === id ? { ...v, ...updates } : v));
   };
 
-  const deleteVehicle = (id: string) => {
+  const deleteVehicle = async (id: string) => {
+    const { error } = await supabase.from('vehicles').delete().eq('id', id);
+    if (error) return;
     setVehicles(vehicles.filter(v => v.id !== id));
     showSuccess("Vehicle removed from fleet.");
   };
 
-  const addVehicleExpense = (vehicleId: string, expense: Omit<VehicleExpenseItem, 'id'>) => {
+  const addVehicleExpense = async (vehicleId: string, expense: Omit<VehicleExpenseItem, 'id'>) => {
+    const { data, error } = await supabase.from('vehicle_expenses').insert([{
+      vehicle_id: vehicleId,
+      label: expense.label,
+      value: expense.value,
+      date: expense.date
+    }]).select();
+
+    if (error) return;
     setVehicles(vehicles.map(v => v.id === vehicleId ? {
       ...v,
-      expenseHistory: [{ ...expense, id: Math.random().toString(36).substr(2, 9) }, ...v.expenseHistory]
+      expenseHistory: [data[0], ...v.expenseHistory]
     } : v));
     addTransaction({ date: expense.date, merchant: `Vehicle: ${expense.label}`, amount: expense.value, category: 'Vehicles' });
   };
 
-  const addGiftEvent = (event: Omit<GiftEvent, 'id'>) => {
-    setGiftEvents([...giftEvents, { ...event, id: Math.random().toString(36).substr(2, 9) }]);
+  const addGiftEvent = async (event: Omit<GiftEvent, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('gift_events').insert([{ ...event, user_id: user.id }]).select();
+    if (error) return;
+    setGiftEvents([...giftEvents, data[0]]);
     showSuccess("Gift event added!");
   };
 
-  const updateGiftEvent = (id: string, updates: Partial<GiftEvent>) => {
+  const updateGiftEvent = async (id: string, updates: Partial<GiftEvent>) => {
+    const { error } = await supabase.from('gift_events').update(updates).eq('id', id);
+    if (error) return;
     setGiftEvents(giftEvents.map(e => e.id === id ? { ...e, ...updates } : e));
   };
 
-  const deleteGiftEvent = (id: string) => {
+  const deleteGiftEvent = async (id: string) => {
+    const { error } = await supabase.from('gift_events').delete().eq('id', id);
+    if (error) return;
     setGiftEvents(giftEvents.filter(e => e.id !== id));
   };
 
-  const updateGoal = (id: string, updates: Partial<Goal>) => {
+  const updateGoal = async (id: string, updates: Partial<Goal>) => {
+    const { error } = await supabase.from('goals').update(updates).eq('id', id);
+    if (error) return;
     setGoals(goals.map(g => g.id === id ? { ...g, ...updates } : g));
   };
 
-  const addPaystub = (stub: Omit<Paystub, 'id'>) => {
-    setPaystubs([{ ...stub, id: Math.random().toString(36).substr(2, 9) }, ...paystubs]);
+  const addPaystub = async (stub: Omit<Paystub, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('paystubs').insert([{
+      user_id: user.id,
+      date: stub.date,
+      file_name: stub.fileName,
+      gross_pay: stub.grossPay,
+      net_pay: stub.netPay,
+      deductions: stub.deductions
+    }]).select();
+
+    if (error) return;
+    setPaystubs([data[0], ...paystubs]);
     setBaseMonthlyIncome(stub.netPay * 2);
     showSuccess("Paystub added!");
   };
 
-  const deletePaystub = (id: string) => setPaystubs(paystubs.filter(p => p.id !== id));
+  const deletePaystub = async (id: string) => {
+    const { error } = await supabase.from('paystubs').delete().eq('id', id);
+    if (error) return;
+    setPaystubs(paystubs.filter(p => p.id !== id));
+  };
 
-  const addSchoolPeriod = (period: Omit<SchoolPeriod, 'id'>) => {
-    setSchoolPeriods([...schoolPeriods, { ...period, id: Math.random().toString(36).substr(2, 9) }]);
+  const addSchoolPeriod = async (period: Omit<SchoolPeriod, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('school_periods').insert([{
+      user_id: user.id,
+      start_month: period.startMonth,
+      end_month: period.endMonth,
+      income_multiplier: period.incomeMultiplier
+    }]).select();
+
+    if (error) return;
+    setSchoolPeriods([...schoolPeriods, data[0]]);
     showSuccess("School period added!");
   };
 
-  const deleteSchoolPeriod = (id: string) => setSchoolPeriods(schoolPeriods.filter(p => p.id !== id));
+  const deleteSchoolPeriod = async (id: string) => {
+    const { error } = await supabase.from('school_periods').delete().eq('id', id);
+    if (error) return;
+    setSchoolPeriods(schoolPeriods.filter(p => p.id !== id));
+  };
 
-  const addSubscription = (sub: Omit<Subscription, 'id'>) => {
-    setSubscriptions([...subscriptions, { ...sub, id: Math.random().toString(36).substr(2, 9) }]);
+  const addSubscription = async (sub: Omit<Subscription, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('subscriptions').insert([{
+      user_id: user.id,
+      name: sub.name,
+      amount: sub.amount,
+      frequency: sub.frequency,
+      next_billing: sub.nextBilling,
+      category: sub.category
+    }]).select();
+
+    if (error) return;
+    setSubscriptions([...subscriptions, data[0]]);
     showSuccess(`${sub.name} added!`);
   };
 
-  const deleteSubscription = (id: string) => setSubscriptions(subscriptions.filter(s => s.id !== id));
+  const deleteSubscription = async (id: string) => {
+    const { error } = await supabase.from('subscriptions').delete().eq('id', id);
+    if (error) return;
+    setSubscriptions(subscriptions.filter(s => s.id !== id));
+  };
 
-  const addDebt = (debt: Omit<Debt, 'id'>) => {
-    setDebts([...debts, { ...debt, id: Math.random().toString(36).substr(2, 9) }]);
+  const addDebt = async (debt: Omit<Debt, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('debts').insert([{
+      user_id: user.id,
+      name: debt.name,
+      balance: debt.balance,
+      limit: debt.limit,
+      apr: debt.apr,
+      min_payment: debt.minPayment
+    }]).select();
+
+    if (error) return;
+    setDebts([...debts, data[0]]);
     showSuccess(`${debt.name} added!`);
   };
 
-  const updateDebt = (id: string, updates: Partial<Debt>) => {
+  const updateDebt = async (id: string, updates: Partial<Debt>) => {
+    const { error } = await supabase.from('debts').update(updates).eq('id', id);
+    if (error) return;
     setDebts(debts.map(d => d.id === id ? { ...d, ...updates } : d));
   };
 
-  const deleteDebt = (id: string) => {
+  const deleteDebt = async (id: string) => {
+    const { error } = await supabase.from('debts').delete().eq('id', id);
+    if (error) return;
     setDebts(debts.filter(d => d.id !== id));
     showSuccess("Debt account removed.");
   };
 
-  const addCourse = (course: Omit<Course, 'id'>) => {
-    setCourses([...courses, { ...course, id: Math.random().toString(36).substr(2, 9) }]);
+  const addCourse = async (course: Omit<Course, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('courses').insert([{
+      user_id: user.id,
+      year: course.year,
+      semester: course.semester,
+      name: course.name,
+      total_cost: course.totalCost,
+      classes_per_week: course.classesPerWeek,
+      weeks: course.weeks,
+      has_labs: course.hasLabs,
+      has_tutorials: course.hasTutorials
+    }]).select();
+
+    if (error) return;
+    setCourses([...courses, data[0]]);
   };
 
-  const updateCourse = (id: string, updates: Partial<Course>) => {
+  const updateCourse = async (id: string, updates: Partial<Course>) => {
+    const { error } = await supabase.from('courses').update(updates).eq('id', id);
+    if (error) return;
     setCourses(courses.map(c => c.id === id ? { ...c, ...updates } : c));
   };
 
-  const addAccount = (acc: Omit<Account, 'id'>) => {
-    setAccounts([...accounts, { ...acc, id: Math.random().toString(36).substr(2, 9) }]);
+  const addAccount = async (acc: Omit<Account, 'id'>) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase.from('accounts').insert([{
+      user_id: user.id,
+      name: acc.name,
+      type: acc.type,
+      balance: acc.balance,
+      last_sync: acc.lastSync,
+      status: acc.status
+    }]).select();
+
+    if (error) return;
+    setAccounts([...accounts, data[0]]);
   };
 
   return (
@@ -269,7 +453,8 @@ export const BudgetProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       paystubs, addPaystub, deletePaystub, schoolPeriods, addSchoolPeriod, deleteSchoolPeriod,
       baseMonthlyIncome, setBaseMonthlyIncome, fixedMonthlyBills, setFixedMonthlyBills,
       subscriptions, addSubscription, deleteSubscription, debts, addDebt, updateDebt, deleteDebt,
-      goals, updateGoal, currentMonthlyIncome, syncContacts: () => showSuccess("Synced!")
+      goals, updateGoal, currentMonthlyIncome, syncContacts: () => showSuccess("Synced!"),
+      isLoading
     }}>
       {children}
     </BudgetContext.Provider>
