@@ -9,21 +9,35 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useBudget } from "@/context/BudgetContext";
-import { showSuccess, showLoading, dismissToast } from "@/utils/toast";
+import { showSuccess, showLoading, dismissToast, showError } from "@/utils/toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Accounts = () => {
   const { accounts, addAccount } = useBudget();
   const [open, setOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const handleBankSync = () => {
-    const tid = showLoading("Connecting to secure banking gateway...");
+  const handleBankSync = async () => {
+    const tid = showLoading("Connecting to secure banking gateway via Edge Function...");
     setIsSyncing(true);
-    setTimeout(() => {
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('financial-processor', {
+        body: { action: 'sync-bank' }
+      });
+
+      if (error) throw error;
+
       dismissToast(tid);
-      showSuccess("Successfully synced with ATB Financial!");
+      showSuccess("Successfully synced with banking providers!");
+      console.log("Synced accounts:", data.accounts);
+    } catch (err) {
+      dismissToast(tid);
+      showError("Failed to sync with bank. Please try again.");
+      console.error(err);
+    } finally {
       setIsSyncing(false);
-    }, 3000);
+    }
   };
 
   return (
@@ -79,7 +93,7 @@ const Accounts = () => {
         <div className="p-2 bg-white dark:bg-slate-900 rounded-lg text-indigo-600"><ShieldCheck size={24} /></div>
         <div className="flex-1">
           <div className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Bank-Grade Security</div>
-          <div className="text-xs text-indigo-700 dark:text-indigo-300">Your data is encrypted using 256-bit AES and protected by open-banking standards.</div>
+          <div className="text-xs text-indigo-700 dark:text-indigo-300">Your data is processed via secure Supabase Edge Functions and encrypted using 256-bit AES.</div>
         </div>
       </div>
 

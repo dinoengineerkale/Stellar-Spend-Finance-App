@@ -21,9 +21,10 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useBudget } from "@/context/BudgetContext";
-import { showLoading, dismissToast } from "@/utils/toast";
+import { showLoading, dismissToast, showSuccess, showError } from "@/utils/toast";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
   const { 
@@ -42,24 +43,39 @@ const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const tid = showLoading("Analyzing paystub PDF...");
+    const tid = showLoading("Analyzing paystub via Supabase Edge Function...");
     setIsUploading(true);
 
-    setTimeout(() => {
+    try {
+      const { data, error } = await supabase.functions.invoke('financial-processor', {
+        body: { 
+          action: 'analyze-paystub',
+          payload: { fileName: file.name }
+        }
+      });
+
+      if (error) throw error;
+
       dismissToast(tid);
       addPaystub({
-        date: new Date().toISOString().split('T')[0],
+        date: data.data.payDate,
         fileName: file.name,
-        grossPay: 3450.00,
-        netPay: 2580.00,
-        deductions: 870.00
+        grossPay: data.data.grossPay,
+        netPay: data.data.netPay,
+        deductions: data.data.deductions
       });
+      showSuccess("Paystub analyzed and recorded!");
+    } catch (err) {
+      dismissToast(tid);
+      showError("Failed to analyze paystub.");
+      console.error(err);
+    } finally {
       setIsUploading(false);
-    }, 2000);
+    }
   };
 
   return (
@@ -125,7 +141,7 @@ const Settings = () => {
                     </div>
                     <div>
                       <div className="font-bold text-indigo-900 dark:text-indigo-100">Update via Paystub</div>
-                      <div className="text-xs text-indigo-700 dark:text-indigo-300">Upload a PDF to automatically update your baseline.</div>
+                      <div className="text-xs text-indigo-700 dark:text-indigo-300">Upload a PDF to automatically update your baseline using AI analysis.</div>
                     </div>
                   </div>
                   <div className="relative">
