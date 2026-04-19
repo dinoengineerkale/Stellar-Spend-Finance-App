@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
   TrendingUp, 
-  Calendar, 
   Car, 
   GraduationCap,
   Clock,
@@ -27,18 +26,39 @@ import { Link } from "react-router-dom";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import { cn } from "@/lib/utils";
 import { useBudget } from "@/context/BudgetContext";
+import { motion } from "framer-motion";
 
 const Index = () => {
-  const { buckets, transactions, currentMonthlyIncome, fixedMonthlyBills, giftEvents } = useBudget();
+  const { buckets, transactions, currentMonthlyIncome, fixedMonthlyBills, giftEvents, isLoading } = useBudget();
 
   const totalBudgeted = buckets.reduce((acc, b) => acc + b.budgeted, 0);
   const recentActivity = transactions.slice(0, 3);
-  const realHourlyRate = (currentMonthlyIncome - fixedMonthlyBills - totalBudgeted) / 160; // Approx 160 working hours
+  const realHourlyRate = (currentMonthlyIncome - fixedMonthlyBills - totalBudgeted) / 160;
+
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-24 md:pb-12">
-      <main className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <motion.main 
+        variants={container}
+        initial="hidden"
+        animate="show"
+        className="max-w-7xl mx-auto p-4 md:p-8 space-y-8"
+      >
+        <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <InMyPocket income={currentMonthlyIncome} bills={fixedMonthlyBills} budgeted={totalBudgeted} />
           </div>
@@ -70,9 +90,9 @@ const Index = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
+        <motion.div variants={item} className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 gap-4">
           <NavButton to="/budgeting" icon={PlusCircleIcon} label="Budget" />
           <NavButton to="/transactions" icon={ListTodo} label="Ledger" />
           <NavButton to="/reports" icon={BarChart3} label="Reports" />
@@ -82,10 +102,10 @@ const Index = () => {
           <NavButton to="/academy" icon={GraduationCap} label="Academy" />
           <NavButton to="/subscriptions" icon={RefreshCw} label="Subs" />
           <NavButton to="/gift-galaxy" icon={Gift} label="Gifts" />
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
+          <motion.div variants={item} className="lg:col-span-2 space-y-8">
             <div className="space-y-4">
               <div className="flex justify-between items-center px-1">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white">Budget Buckets</h3>
@@ -117,9 +137,9 @@ const Index = () => {
                 ))}
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="space-y-8">
+          <motion.div variants={item} className="space-y-8">
             <Card className="rounded-3xl border-none shadow-lg overflow-hidden">
               <CardHeader className="bg-emerald-600 text-white pb-6">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
@@ -156,9 +176,9 @@ const Index = () => {
                 ))}
               </CardContent>
             </Card>
-          </div>
+          </motion.div>
         </div>
-      </main>
+      </motion.main>
       
       <footer className="mt-12 border-t border-slate-200 dark:border-slate-800 pt-12 pb-8">
         <div className="text-center text-slate-400 text-xs font-medium uppercase tracking-widest">
